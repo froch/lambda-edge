@@ -1,0 +1,24 @@
+---
+services:
+
+  localstack:
+    image: localstack/localstack:latest
+    ports:
+      - "4566:4566"  # Main LocalStack service port
+      - "4571:4571"  # CloudFront
+    environment:
+      - SERVICES=s3,cloudfront,lambda
+      - AWS_DEFAULT_REGION=us-east-2
+      - DEBUG=1
+    volumes:
+      - ./localstack:/var/lib/localstack
+    networks:
+      - localstack-network
+    healthcheck:
+      test: curl -s http://localhost:4566/health | grep 'running'
+      interval: 5s
+      retries: 20
+
+networks:
+  localstack-network:
+    driver: bridge
