@@ -1,9 +1,12 @@
 {
-  "name": "lambda",
+  "name": "lambda-edge",
   "version": "1.0.0",
+  "type": "module",
   "description": "",
   "main": "index.js",
   "scripts": {
+    "lint": "eslint .",
+    "fmt": "prettier --write .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -11,12 +14,18 @@
   "license": "ISC",
   "dependencies": {
     "@types/node": "^22.7.4",
+    "aws-lambda": "^1.0.7",
     "aws-sdk": "^2.1691.0",
     "axios": "^1.7.7",
     "typescript": "^5.6.2"
   },
   "devDependencies": {
+    "@types/aws-lambda": "^8.10.145",
+    "@typescript-eslint/eslint-plugin": "^8.8.0",
+    "@typescript-eslint/parser": "^8.8.0",
+    "eslint": "^9.11.1",
     "nodemon": "^3.1.7",
+    "prettier": "^3.3.3",
     "ts-node": "^10.9.2"
   }
 }
