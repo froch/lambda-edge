@@ -12,16 +12,16 @@ func main() {
 
 	mux.HandleFunc("/200", func(w http.ResponseWriter, r *http.Request) {
 		response := map[string]string{"message": "OK"}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(response); err != nil {
-			slog.Error("Failed to write response", "error", err)
-			http.Error(w, "Failed to write response", http.StatusInternalServerError)
-		}
+		WriteOut(w, http.StatusOK, response)
+	})
+
+	mux.HandleFunc("/403", func(w http.ResponseWriter, r *http.Request) {
+		response := map[string]string{"message": "OK"}
+		WriteOut(w, http.StatusForbidden, response)
 	})
 
 	server := &http.Server{
-		Addr:    ":8080",
+		Addr:    "0.0.0.0:8080",
 		Handler: loggedMux,
 	}
 
@@ -39,4 +39,13 @@ func LogRequest(next http.Handler) http.Handler {
 		)
 		next.ServeHTTP(w, r)
 	})
+}
+
+func WriteOut(w http.ResponseWriter, status int, body interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	if err := json.NewEncoder(w).Encode(body); err != nil {
+		slog.Error("Failed to write response", "error", err)
+		http.Error(w, "Failed to write response", http.StatusInternalServerError)
+	}
 }

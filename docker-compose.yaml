@@ -1,24 +1,51 @@
 ---
 services:
 
+  authz:
+    image: localhost:4510/authz
+    build:
+      context: ./authz
+      dockerfile: Dockerfile
+    networks:
+      - nimble
+    ports:
+      - 8080:8080
+
+  lambda:
+    image: localhost:4510/lambda-edge
+    build:
+      context: ./lambda
+      dockerfile: Dockerfile
+    networks:
+      - nimble
+    environment:
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_REGION=us-east-1
+    depends_on:
+      - localstack
+
   localstack:
     image: localstack/localstack:latest
     ports:
-      - "4566:4566"  # Main LocalStack service port
-      - "4571:4571"  # CloudFront
+      - "4566:4566"  # main localstack endpoint
+      - "4571:4571"  # cloudfront
     environment:
       - SERVICES=s3,cloudfront,lambda
-      - AWS_DEFAULT_REGION=us-east-2
+      - AWS_DEFAULT_REGION=us-east-1
       - DEBUG=1
+      - LAMBDA_IGNORE_ARCHTIECTURE=1
     volumes:
-      - ./localstack:/var/lib/localstack
+      - .localstack:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+      - .localstack/bootstrap:/etc/localstack/init/ready.d/
     networks:
-      - localstack-network
+      - nimble
     healthcheck:
       test: curl -s http://localhost:4566/health | grep 'running'
       interval: 5s
       retries: 20
 
 networks:
-  localstack-network:
+  nimble:
     driver: bridge
