@@ -149,11 +149,6 @@ $ awslocal ecr create-repository \
     --region "${AWS_LOCAL_REGION}")
 ```
 
-- At this point, we cannot do the remaining steps during localstack bootstrap.
-    - The creation of the Lambda requires an existing ECR image.
-    - The update of CloudFront requires an existing Lambda function.
-- We'll describe the command-line invocations, and provide the Makefile targets.
-
 ### Create IAM roles and policies
 
 - For our Lambda function to access things, we need to grant it the necessary permissions.
@@ -184,7 +179,6 @@ $ awslocal iam attach-role-policy \
 ````
 
 - Sweet! Our localstack initialization is complete.
-- We'll have to continue on foot from here.
 
 ### Build and deploy the Lambda function
 

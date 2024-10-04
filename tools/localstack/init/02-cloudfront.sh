@@ -6,43 +6,33 @@ source "/tmp/scripts/logs.sh"
 AWS_LOCAL_ENDPOINT_URL="http://localhost:4566"
 AWS_LOCAL_REGION="us-east-1"
 
-CLOUDFRONT_S3_ORIGIN="froch.s3.localhost.localstack.cloud:4566"
+AWS_CLOUDFRONT_S3_ORIGIN="froch.s3.localhost.localstack.cloud:4566"
+AWS_CLOUDFRONT_ID_FILE="/tmp/cloudfront-id.txt"
 
 main() {
   cloudfront_create_distribution
 }
 
-cloudfront_create_origin_request_policy() {
-  awslocal cloudfront create-origin-request-policy \
-      --origin-request-policy-config '{
-          "Name": "ForwardAuthHeaderPolicy",
-          "Comment": "Forward authentication header to Lambda@Edge",
-          "HeadersConfig": {
-              "HeaderBehavior": "whitelist",
-              "Headers": {
-                  "Quantity": 1,
-                  "Items": ["authentication"]
-              }
-          },
-          "CookiesConfig": {
-              "CookieBehavior": "none"
-          },
-          "QueryStringsConfig": {
-              "QueryStringBehavior": "none"
-          }
-      }'
-}
-
 cloudfront_create_distribution() {
   log_info "cloudfront" "creating distribution"
   out=$(awslocal cloudfront create-distribution \
-    --origin-domain-name "${CLOUDFRONT_S3_ORIGIN}" \
+    --origin-domain-name "${AWS_CLOUDFRONT_S3_ORIGIN}" \
     --endpoint-url "${AWS_LOCAL_ENDPOINT_URL}" \
     --region "${AWS_LOCAL_REGION}")
+
   echo "${out}" | while IFS= read -r line
   do
     log_info "cloudfront" "${line}"
   done
+
+  AWS_CLOUDFRONT_ID=$(echo "${out}" | jq -r '.Distribution.Id')
+  if [[ -n "${AWS_CLOUDFRONT_ID}" ]]; then
+    echo "${AWS_CLOUDFRONT_ID}" > "${AWS_CLOUDFRONT_ID_FILE}"
+    log_info "cloudfront" "CloudFront distribution ID: ${AWS_CLOUDFRONT_ID}"
+  else
+    log_error "cloudfront" "Failed to extract CloudFront distribution ID"
+    exit 1
+  fi
 }
 
 main

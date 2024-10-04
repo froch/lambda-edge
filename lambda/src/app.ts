@@ -3,6 +3,9 @@ import https, { RequestOptions } from 'https';
 import { IncomingMessage } from 'http';
 
 const keepAliveAgent = new https.Agent({ keepAlive: true, timeout: 5000 });
+const AUTHZ_HOSTNAME = 'authz';  // docker-compose service name; localstack lambda runs in the same bridged network
+const OK_PATH = '/200';
+const NOPE_PATH = '/403';
 
 const AUTH_ERROR_HTML = `
 <!DOCTYPE html>
@@ -12,13 +15,10 @@ const AUTH_ERROR_HTML = `
     <title>Authz: NOPE</title>
   </head>
   <body>
-    <p>That's a Texas-Size NOPE from me, dawg.</p>
+    <p>That's a Texas-size NOPE from me, dawg.</p>
   </body>
 </html>
 `;
-
-const EXTERNAL_SERVER_HOSTNAME = 'external-server.com';
-const AUTHORIZATION_PATH = '/auth-check';
 
 export const handler = async (
     event: CloudFrontRequestEvent,
@@ -56,9 +56,9 @@ const authzWithExternalServer = (
 
   return new Promise((resolve, reject) => {
     const options: RequestOptions = {
-      hostname: EXTERNAL_SERVER_HOSTNAME,
-      port: 443,
-      path: AUTHORIZATION_PATH,
+      hostname: AUTHZ_HOSTNAME,
+      port: 8080,
+      path: OK_PATH,
       method: 'GET',
       headers: { 'authentication': authHeader },
       agent: keepAliveAgent,

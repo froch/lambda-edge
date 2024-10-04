@@ -35,10 +35,20 @@ docker-build-lambda:
 	@docker compose build lambda
 
 docker-push: docker-build
-docker-push-authz: docker-build-authz
+	@docker compose push lambda
 	@docker compose push authz
 docker-push-lambda: docker-build-lambda
 	@docker compose push lambda
+docker-push-authz: docker-build-authz
+	@docker compose push authz
+
+docker-run: docker-build
+	@docker compose up authz
+	@docker compose up lambda
+docker-run-authz: docker-build-authz
+	@docker compose up authz
+docker-run-lambda: docker-build-lambda
+	@docker compose up lambda
 
 ########################################
 ### localstack

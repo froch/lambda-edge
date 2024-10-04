@@ -1,51 +1,14 @@
 {
-  "Origins": {
-    "Quantity": 1,
-    "Items": [
-      {
-        "Id": "froch-bucket.s3.localhost.localstack.cloud:4566-1728053181-997397",
-        "DomainName": "froch-bucket.s3.localhost.localstack.cloud:4566",
-        "OriginPath": "",
-        "CustomHeaders": {
-          "Quantity": 0
-        },
-        "CustomOriginConfig": {
-          "HTTPPort": 80,
-          "HTTPSPort": 443,
-          "OriginProtocolPolicy": "http-only",
-          "OriginReadTimeout": 30,
-          "OriginKeepaliveTimeout": 5
-        },
-        "ConnectionAttempts": 3,
-        "ConnectionTimeout": 10,
-        "OriginShield": {
-          "Enabled": false
-        }
-      }
-    ]
-  },
   "DefaultCacheBehavior": {
-    "TargetOriginId": "froch-bucket.s3.localhost.localstack.cloud:4566-1728053181-997397",
-    "ViewerProtocolPolicy": "allow-all",
-    "AllowedMethods": {
-      "Quantity": 2,
-      "Items": ["HEAD", "GET"],
-      "CachedMethods": {
-        "Quantity": 2,
-        "Items": ["HEAD", "GET"]
-      }
-    },
-    "SmoothStreaming": false,
     "LambdaFunctionAssociations": {
       "Quantity": 1,
       "Items": [
         {
-          "LambdaFunctionARN": "<your-lambda-arn>",
+          "LambdaFunctionARN": "arn:aws:lambda:us-east-1:000000000000:function:lambda",
           "EventType": "viewer-request"
         }
       ]
     },
     "OriginRequestPolicyId": "<your-origin-request-policy-id>"
-  },
-  "Enabled": true
+  }
 }
