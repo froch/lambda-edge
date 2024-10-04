@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BASEDIR=$(dirname "$0")
 source "/tmp/scripts/logs.sh"
 
 AWS_LOCAL_ENDPOINT_URL="http://localhost:4566"
 AWS_LOCAL_REGION="us-east-1"
 
 ASSETS_DIR="/tmp/assets"
-S3_BUCKET_NAME="froch-bucket"
+S3_BUCKET_NAME="froch"
 S3_KEY_NAME="this-is-fine.gif"
 
 main() {
@@ -40,7 +39,7 @@ s3_upload_file() {
 main
 
 # example S3 URLs
-# http://localhost:4566/froch-bucket/this-is-fine.gif
-# http://froch-bucket.s3.us-east-1.localhost.localstack.cloud:4566/this-is-fine.gif
-# http://froch-bucket.s3.localhost.localstack.cloud:4566/this-is-fine.gif
-# http://s3.us-east-1.localhost.localstack.cloud:4566/froch-bucket/this-is-fine.gif
+# http://localhost:4566/froch/this-is-fine.gif
+# http://froch.s3.us-east-1.localhost.localstack.cloud:4566/this-is-fine.gif
+# http://froch.s3.localhost.localstack.cloud:4566/this-is-fine.gif
+# http://s3.us-east-1.localhost.localstack.cloud:4566/froch/this-is-fine.gif

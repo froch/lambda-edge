@@ -34,10 +34,10 @@ docker-build-authz:
 docker-build-lambda:
 	@docker compose build lambda
 
-docker-push: docker-build docker-push-authz docker-push-lambda
-docker-push-authz:
+docker-push: docker-build
+docker-push-authz: docker-build-authz
 	@docker compose push authz
-docker-push-lambda:
+docker-push-lambda: docker-build-lambda
 	@docker compose push lambda
 
 ########################################
@@ -47,5 +47,7 @@ docker-push-lambda:
 
 localstack-up:
 	@docker compose up localstack
-localstack-lambda:
-	@docker compose exec localstack /var/lib/localstack/lib/create-lambda.sh
+localstack-lambda: docker-push-lambda
+	@docker compose exec localstack /tmp/lambda/create.sh
+localstack-cloudfront:
+	@docker compose exec localstack /tmp/cloudfront/update.sh

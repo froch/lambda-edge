@@ -2,7 +2,7 @@
 set -euo pipefail
 
 BASEDIR=$(dirname "$0")
-source "${BASEDIR}/logs.sh"
+source "/tmp/scripts/logs.sh"
 
 AWS_LOCAL_ENDPOINT_URL="http://localhost:4566"
 AWS_LOCAL_REGION="us-east-1"
@@ -10,7 +10,7 @@ AWS_LOCAL_REGION="us-east-1"
 AWS_LAMBDA_NAME="lambda"
 AWS_LAMBDA_HANDLER="app.handler"
 AWS_LAMBDA_IMAGE="000000000000.dkr.ecr.us-east-1.localhost.localstack.cloud:4566/lambda"
-AWS_LAMBDA_ROLE="arn:aws:iam::000000000000:role/lambda-role"
+AWS_LAMBDA_ROLE="arn:aws:iam::000000000000:role/lambda"
 
 main() {
   lambda_create_function

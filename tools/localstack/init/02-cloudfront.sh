@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BASEDIR=$(dirname "$0")
 source "/tmp/scripts/logs.sh"
 
 AWS_LOCAL_ENDPOINT_URL="http://localhost:4566"
 AWS_LOCAL_REGION="us-east-1"
 
-CLOUDFRONT_S3_ORIGIN="froch-bucket.s3.localhost.localstack.cloud:4566"
+CLOUDFRONT_S3_ORIGIN="froch.s3.localhost.localstack.cloud:4566"
 
 main() {
   cloudfront_create_distribution

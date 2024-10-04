@@ -98,7 +98,7 @@ $ awslocal s3 cp \
     --region "${AWS_LOCAL_REGION}"
 
 # ensure this file is accessible
-# http://localhost:4566/froch-bucket/this-is-fine.gif
+# http://localhost:4566/froch/this-is-fine.gif
 ```
 
 ### Interlude: System DNS configuration
@@ -154,30 +154,49 @@ $ awslocal ecr create-repository \
     - The update of CloudFront requires an existing Lambda function.
 - We'll describe the command-line invocations, and provide the Makefile targets.
 
-### Build and push our Docker images to ECR
+### Create IAM roles and policies
 
-- The `authz` and `lambda` directories each contain a `Dockerfile`.
-- The `docker-compose.yaml` provides the config or building, pushing and running them.
-
-- First, the long-form commands:
+- For our Lambda function to access things, we need to grant it the necessary permissions.
+- Our bootstrap scripts will handle this.
+- First, let's create a role which Lambda can assume.
 ```bash
-$ docker-compose build authz
-$ docker-compose push authz
-$ docker-compose build lambda
-$ docker-compose push lambda
+$ awslocal iam create-role \
+    --role-name "${AWS_IAM_LAMBDA_ROLE_NAME}" \
+    --assume-role-policy-document "${AWS_IAM_LAMBDA_TRUST_POLICY_JSON}")
 ```
-
-- But really, who even has time to type all that:
+- Let's grant it pull access from ECR
 ```bash
-$ make docker-push
+$ awslocal iam create-policy \
+      --policy-name "${AWS_IAM_LAMBDA_ECR_POLICY_NAME}" \
+      --policy-document "${AWS_IAM_LAMBDA_ECR_POLICY_JSON}"
+$ awslocal iam attach-role-policy \
+      --role-name "${AWS_IAM_LAMBDA_ROLE_NAME}" \
+      --policy-arn "arn:aws:iam::000000000000:policy/${AWS_IAM_LAMBDA_ECR_POLICY_NAME}"
 ```
-
-### Create our Lambda function
-
-- With our images built and deployed, let's create the localstack Lambda function.
-
+- And let's also allow it to write to CloudaWatch logs
 ```bash
-awslocal lambda create-function \
+$ awslocal iam create-policy \
+      --policy-name "${AWS_IAM_LAMBDA_LOGS_POLICY_NAME}" \
+      --policy-document "${AWS_IAM_LAMBDA_LOGS_POLICY_JSON}"
+$ awslocal iam attach-role-policy \
+      --role-name "${AWS_IAM_LAMBDA_ROLE_NAME}" \
+      --policy-arn "arn:aws:iam::000000000000:policy/${AWS_IAM_LAMBDA_LOGS_POLICY_NAME}"
+````
+
+- Sweet! Our localstack initialization is complete.
+- We'll have to continue on foot from here.
+
+### Build and deploy the Lambda function
+
+- First, the TLDR;
+```bash
+$ make localstack-lambda
+```
+- Here's what that does.
+```bash
+$ docker compose build lambda
+$ docker compose push lambda
+$ awslocal lambda create-function \
     --function-name "${AWS_LAMBDA_NAME}" \
     --package-type Image \
     --code ImageUri="${AWS_LAMBDA_IMAGE}" \
