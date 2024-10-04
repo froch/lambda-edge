@@ -1,0 +1,17 @@
+{
+  "Name": "ForwardAuthHeaderPolicy",
+  "Comment": "Forward authentication header to Lambda@Edge",
+  "HeadersConfig": {
+    "HeaderBehavior": "whitelist",
+    "Headers": {
+      "Quantity": 1,
+      "Items": ["authentication"]
+    }
+  },
+  "CookiesConfig": {
+    "CookieBehavior": "none"
+  },
+  "QueryStringsConfig": {
+    "QueryStringBehavior": "none"
+  }
+}

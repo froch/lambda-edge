@@ -18,12 +18,6 @@ services:
       dockerfile: Dockerfile
     networks:
       - froch
-    environment:
-      - AWS_ACCESS_KEY_ID=test
-      - AWS_SECRET_ACCESS_KEY=test
-      - AWS_REGION=us-east-1
-    depends_on:
-      - localstack
 
   localstack:
     image: localstack/localstack-pro:latest

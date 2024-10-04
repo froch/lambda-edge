@@ -13,6 +13,27 @@ main() {
   cloudfront_create_distribution
 }
 
+cloudfront_create_origin_request_policy() {
+  awslocal cloudfront create-origin-request-policy \
+      --origin-request-policy-config '{
+          "Name": "ForwardAuthHeaderPolicy",
+          "Comment": "Forward authentication header to Lambda@Edge",
+          "HeadersConfig": {
+              "HeaderBehavior": "whitelist",
+              "Headers": {
+                  "Quantity": 1,
+                  "Items": ["authentication"]
+              }
+          },
+          "CookiesConfig": {
+              "CookieBehavior": "none"
+          },
+          "QueryStringsConfig": {
+              "QueryStringBehavior": "none"
+          }
+      }'
+}
+
 cloudfront_create_distribution() {
   log_info "cloudfront" "creating distribution"
   out=$(awslocal cloudfront create-distribution \
