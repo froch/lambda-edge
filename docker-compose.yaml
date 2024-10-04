@@ -2,7 +2,7 @@
 services:
 
   authz:
-    image: localhost:4510/authz
+    image: 000000000000.dkr.ecr.us-east-1.localhost.localstack.cloud:4566/authz
     build:
       context: ./authz
       dockerfile: Dockerfile
@@ -12,7 +12,7 @@ services:
       - 8080:8080
 
   lambda:
-    image: localhost:4510/lambda-edge
+    image: 000000000000.dkr.ecr.us-east-1.localhost.localstack.cloud:4566/lambda
     build:
       context: ./lambda
       dockerfile: Dockerfile
@@ -37,7 +37,7 @@ services:
       DEBUG: 1
       LAMBDA_IGNORE_ARCHITECTURE: 1
       LOCALSTACK_AUTH_TOKEN: $LOCALSTACK_AUTH_TOKEN
-      SERVICES: s3,cloudfront,lambda
+      SERVICES: cloudfront,ecr,lambda,s3
     volumes:
       - .localstack:/var/lib/localstack
       - /var/run/docker.sock:/var/run/docker.sock

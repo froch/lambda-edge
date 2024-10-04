@@ -4,6 +4,8 @@
   <img src="https://github.com/froch/lambda-edge/blob/main/tools/assets/aws-architectture.png?raw=true" alt="AWS Architecture">
 </div>
 
+---
+
 ## Source Material
 
 - [Whitepaper (2023)](https://aws.amazon.com/blogs/networking-and-content-delivery/external-server-authorization-with-lambdaedge/)
@@ -14,6 +16,8 @@
 - Secure CloudFront content distribution using external server Authz.
 - Dockerize the Lambda@Edge function and the Authz server.
 - Translate the working local config to Terraform HCL.
+
+---
 
 ## Project Structure
 
@@ -30,6 +34,8 @@
 - **lambda**: Typescript code for the Lambda@Edge function described in the whitepaper.
 - **terraform**: Terraform HCL configuration files to provision AWS resources.
 - **tools**: Scripts and helpers for the above.
+
+---
 
 ## Plan of Attack
 
@@ -67,23 +73,28 @@
 - ... ?
 - Drinks are on me.
 
+---
+
 ## HOWTO 
 
 ### Create an S3 bucket and upload an image
 
+- Let's get some files onto S3.
+
 ```bash
-awslocal s3 mb \
-  "s3://nimble-bucket" \
-  --endpoint-url "http://localhost:4566" \
-  --region "us-east-1"
+$ awslocal s3 mb \
+    "s3://${S3_BUCKET_NAME}" \
+    --endpoint-url "${AWS_LOCAL_ENDPOINT_URL}" \
+    --region "${AWS_LOCAL_REGION}"
 
-awslocal s3 cp \
-  "${BASEDIR}/this-is-fine.gif" \
-  "s3://nimble-bucket/this-is-fine.gif" \
-  --endpoint-url "http://localhost:4566" \
-  --region "us-east-1"
+$ awslocal s3 cp \
+    "${FILE}" \
+    "s3://${S3_BUCKET_NAME}/${S3_KEY_NAME}" \
+    --endpoint-url "${AWS_LOCAL_ENDPOINT_URL}" \
+    --region "${AWS_LOCAL_REGION}"
 
-# http://localhost:4566/nimble-bucket/this-is-fine.gif
+# ensure this file is accessible
+# http://localhost:4566/froch-bucket/this-is-fine.gif
 ```
 
 ### Interlude: System DNS configuration
@@ -104,4 +115,32 @@ $ docker-compose up localstack
 $ dig test.localhost.localstack.cloud @127.0.0.1 -p 5053
 ;; ANSWER SECTION:
 test.localhost.localstack.cloud. 300 IN	A	127.0.0.1
+```
+
+### Front the S3 bucket with CloudFront
+
+- CloudFront on localstack requires a [PRO subscription](https://www.localstack.cloud/pricing).
+- Fine, so be it. They had to find a monetization scheme somewhere; their tooling is excellent.
+- All subsequent steps assume you have a `LOCALSTACK_AUTH_TOKEN` defined in your env.
+
+```bash
+$ awslocal cloudfront create-distribution \
+    --origin-domain-name "${CLOUDFRONT_S3_ORIGIN}" \
+    --endpoint-url "${AWS_LOCAL_ENDPOINT_URL}" \
+    --region "${AWS_LOCAL_REGION}")
+    
+# ensure this file is accessible
+# http://${distribution-id}.cloudfront.localhost.localstack.cloud:4566/this-is-fine.gif
+```
+
+### Create some ECR repositories
+
+- ECR on localstack also requires a [PRO subscription](https://www.localstack.cloud/pricing).
+- Alright, alright, alright.
+
+```bash
+$ awslocal ecr create-repository \
+    --repository-name "${repo}" \
+    --endpoint-url "${AWS_LOCAL_ENDPOINT_URL}" \
+    --region "${AWS_LOCAL_REGION}")
 ```
