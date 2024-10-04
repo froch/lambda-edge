@@ -8,8 +8,7 @@
 
 - [Whitepaper (2023)](https://aws.amazon.com/blogs/networking-and-content-delivery/external-server-authorization-with-lambdaedge/)
 - [Lambda@Edge product page](https://aws.amazon.com/lambda/edge/)
-- [Lambda@Edge developer guide](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-examples.html)
-- 
+- [Lambda@Edge developer guide](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-examples.html) 
 
 ## Major Goals
 - Secure CloudFront content distribution using external server Authz.
@@ -25,7 +24,7 @@
 └── tools
 ```
 
-- **.localstack**: Config files for [localstack](https://docs.localstack.cloud/user-guide/aws/lambda/), a local AWS cloud stack for breaking things.
+- **.localstack**: Config and volumes for [localstack](https://docs.localstack.cloud/user-guide/aws/lambda/)
 - **authz**: A simple golang webserver with which to iterate on requests and responses.
 - **infrastructure**: Terraform HCL configuration files to provision AWS resources.
 - **lambda**: Typescript code for the Lambda@Edge function described in the whitepaper.
@@ -54,4 +53,18 @@
 ## HOWTO 
 
 ### Create an S3 bucket and upload an image
-[infrastructure](infrastructure)
+
+```bash
+awslocal s3 mb \
+  "s3://nimble-bucket" \
+  --endpoint-url "http://localhost:4566" \
+  --region "us-east-1"
+
+awslocal s3 cp \
+  "${BASEDIR}/this-is-fine.gif" \
+  "s3://nimble-bucket/this-is-fine.gif" \
+  --endpoint-url "http://localhost:4566" \
+  --region "us-east-1"
+
+# http://localhost:4566/nimble-bucket/this-is-fine.gif
+```
