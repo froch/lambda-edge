@@ -2,12 +2,12 @@
 set -euo pipefail
 
 BASEDIR=$(dirname "$0")
-source "${BASEDIR}/logs.sh"
+source "/tmp/scripts/logs.sh"
 
 AWS_LOCAL_ENDPOINT_URL="http://localhost:4566"
 AWS_LOCAL_REGION="us-east-1"
 
-FILE_NAME="s3-this-is-fine.gif"
+ASSETS_DIR="/tmp/assets"
 S3_BUCKET_NAME="froch-bucket"
 S3_KEY_NAME="this-is-fine.gif"
 
@@ -25,7 +25,7 @@ s3_create_bucket() {
 }
 
 s3_upload_file() {
-  for FILE in "${BASEDIR}"/*.gif; do
+  for FILE in "${ASSETS_DIR}"/*.gif; do
     FILE_NAME=$(basename "${FILE}")
     S3_KEY_NAME="${FILE_NAME}"
     log_info "s3" "uploading file: ${FILE} --> s3://${S3_BUCKET_NAME}/${S3_KEY_NAME}"

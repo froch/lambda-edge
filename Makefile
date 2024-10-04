@@ -4,7 +4,7 @@
 .PHONY: clean
 
 clean:
-	@find .localstack -mindepth 1 -maxdepth 1 ! -name 'bootstrap' ! -name 'lib' -exec rm -rf {} +
+	@find .localstack -mindepth 1 -maxdepth 1 ! -name '.gitkeep' -exec rm -rf {} +
 	@rm -rf authz/build
 	@rm -rf lambda/dist
 
@@ -46,9 +46,6 @@ docker-push-lambda:
 .PHONY: localstack localstack-lambda
 
 localstack-up:
-	@mkdir -p .localstack/lib
-	@cp -f ./tools/scripts/logs.sh ./.localstack/lib/logs.sh
 	@docker compose up localstack
 localstack-lambda:
-	@cp -f ./tools/scripts/localstack-lambda-create.sh ./.localstack/lib/create-lambda.sh
 	@docker compose exec localstack /var/lib/localstack/lib/create-lambda.sh

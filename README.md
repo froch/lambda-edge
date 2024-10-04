@@ -180,7 +180,7 @@ $ make docker-push
 awslocal lambda create-function \
     --function-name "${AWS_LAMBDA_NAME}" \
     --package-type Image \
-    --code ImageUri "${AWS_LAMBDA_IMAGE}" \
+    --code ImageUri="${AWS_LAMBDA_IMAGE}" \
     --role "${AWS_LAMBDA_ROLE}" \
     --handler "${AWS_LAMBDA_HANDLER}" \
     --endpoint-url "${AWS_LOCAL_ENDPOINT_URL}" \

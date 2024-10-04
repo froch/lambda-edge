@@ -21,6 +21,7 @@ services:
 
   localstack:
     image: localstack/localstack-pro:latest
+#    entrypoint: ["/bin/sleep", "infinity"]
     ports:
       - "4566:4566"                      # main localstack endpoint
       - "127.0.0.1:4510-4559:4510-4559"  # external services port range
@@ -33,9 +34,13 @@ services:
       LOCALSTACK_AUTH_TOKEN: $LOCALSTACK_AUTH_TOKEN
       SERVICES: cloudfront,ecr,lambda,s3
     volumes:
-      - .localstack:/var/lib/localstack
-      - /var/run/docker.sock:/var/run/docker.sock
-      - .localstack/bootstrap:/etc/localstack/init/ready.d/
+      - ./.localstack:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock # dind
+      - ./tools/assets:/tmp/assets
+      - ./tools/localstack/cloudfront:/tmp/cloudfront
+      - ./tools/localstack/init:/etc/localstack/init/ready.d/
+      - ./tools/localstack/lambda:/tmp/lambda
+      - ./tools/scripts:/tmp/scripts
     networks:
       - froch
     healthcheck:

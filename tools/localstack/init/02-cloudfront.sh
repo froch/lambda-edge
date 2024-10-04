@@ -2,7 +2,7 @@
 set -euo pipefail
 
 BASEDIR=$(dirname "$0")
-source "${BASEDIR}/logs.sh"
+source "/tmp/scripts/logs.sh"
 
 AWS_LOCAL_ENDPOINT_URL="http://localhost:4566"
 AWS_LOCAL_REGION="us-east-1"
