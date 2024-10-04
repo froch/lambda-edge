@@ -14,9 +14,9 @@ AWS_CLOUDFRONT_ORIGIN_POLICY_JSON="${BASEDIR}/origin-request-policy.json"
 UPDATED_CONFIG_FILE="/tmp/updated-config.json" # Add a file to store the updated config
 
 main() {
-#  cloudfront_create_origin_request_policy
+  cloudfront_create_origin_request_policy
   cloudfront_merge_configs
-#  cloudfront_update_distribution
+  cloudfront_update_distribution
 }
 
 cloudfront_create_origin_request_policy() {
@@ -104,7 +104,7 @@ cloudfront_update_distribution() {
   out=$(awslocal cloudfront update-distribution \
     --id "${AWS_CLOUDFRONT_DISTRO_ID}" \
     --if-match "${ETag}" \
-    --distribution-config file://"${UPDATED_CONFIG_FILE}" \
+    --distribution-config "file://${UPDATED_CONFIG_FILE}" \
     --endpoint-url "${AWS_LOCAL_ENDPOINT_URL}" \
     --region "${AWS_LOCAL_REGION}")
 

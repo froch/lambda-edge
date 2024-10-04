@@ -6,6 +6,17 @@
 
 ---
 
+>[!TIP]
+> TLDR;
+>```bash
+>  $ make localstack-up
+>  $ make localstack-lambda
+>  $ make localstack-cloudfront
+>  $ make docker-run-authz
+>  ```
+
+---
+
 ## Source Material
 
 - [Whitepaper (2023)](https://aws.amazon.com/blogs/networking-and-content-delivery/external-server-authorization-with-lambdaedge/)
@@ -199,3 +210,22 @@ $ awslocal lambda create-function \
     --endpoint-url "${AWS_LOCAL_ENDPOINT_URL}" \
     --region "${AWS_LOCAL_REGION}"
 ```
+
+### Configure CloudFront to trigger the Lambda
+
+- With everything in place, we need to reconfigure the deployed Cloudfront distribution to trigger the Lambda function.
+
+```bash
+$ make localstack-cloudfront
+```
+
+### Run the authz server in localhost docker
+
+- First, the TLDR;
+```bash
+$ make docker-run-authz
+```
+
+- The internals of localstack run on the same bridged host network
+- Thus, they can resolve containers running on the host.
+- As such, the authz server is visible to Lambda, ECS, EKS, etc.

@@ -29,7 +29,6 @@ services:
     environment:
       AWS_DEFAULT_REGION: us-east-1
       DEBUG: 1
-      LAMBDA_DOCKER_NETWORK: froch
       LAMBDA_IGNORE_ARCHITECTURE: 1
       LOCALSTACK_AUTH_TOKEN: $LOCALSTACK_AUTH_TOKEN
     volumes:

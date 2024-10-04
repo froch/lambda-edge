@@ -4,8 +4,7 @@ FROM node:lts-alpine AS builder
   RUN npm install -g pnpm && pnpm install --frozen-lockfile
   COPY . .
   RUN pnpm run build
-  CMD ["node", "dist/app.js"]
 
-FROM public.ecr.aws/lambda/nodejs:12 AS lambda
-    COPY --from=builder /app/dist /var/task
-    CMD ["app.handler"]
+FROM public.ecr.aws/lambda/nodejs:20 AS lambda
+  COPY --from=builder /app/dist /var/task
+  CMD ["app.handler"]

@@ -25,15 +25,30 @@ export const handler = async (
     context: any,
     callback: CloudFrontRequestCallback
 ): Promise<void> => {
-
-  const request = event.Records[0].cf.request;
-  const headers = request.headers;
-
   try {
-    const authHeader = headers['authentication']?.[0]?.value || '';
+    console.log('Event:', JSON.stringify(event));
+    console.log('Context:', JSON.stringify(context));
+    console.log('Callback:', JSON.stringify(callback));
 
-    if (!authHeader) {
-      return callback(null, generateErrorResponse(403, 'Authz: NOPE', AUTH_ERROR_HTML));
+    if (event.Records === undefined || event.Records.length === 0) {
+      if(callback !== undefined) {
+        return callback(null, generateErrorResponse(400, 'Bad Request', 'No CloudFront request records.'));
+      }
+      console.log('No CloudFront request records.');
+      return
+    }
+
+    const request = event.Records[0].cf.request;
+    const headers = request.headers;
+
+    const authHeader =
+        headers['authentication'] && headers['authentication'][0] && headers['authentication'][0].value
+            ? headers['authentication'][0].value
+            : '';
+
+    if (authHeader) {
+      console.log('Auth header:', authHeader);
+      // return callback(null, generateErrorResponse(403, 'Authz: NOPE', AUTH_ERROR_HTML));
     }
 
     const isAuthorized = await authzWithExternalServer(authHeader);
@@ -44,23 +59,20 @@ export const handler = async (
       return callback(null, generateErrorResponse(403, 'Authz: NOPE', AUTH_ERROR_HTML));
     }
   } catch (error) {
-    console.error('Authorization error:', error);
+    console.error('Authz error:', error);
     return callback(null, generateErrorResponse(500, 'Internal Server Error', 'An internal error occurred.'));
   }
 };
 
 // Call the external Authz server
-const authzWithExternalServer = (
-    authHeader: string
-): Promise<boolean> => {
-
+const authzWithExternalServer = (authHeader: string): Promise<boolean> => {
   return new Promise((resolve, reject) => {
     const options: RequestOptions = {
       hostname: AUTHZ_HOSTNAME,
       port: 8080,
       path: OK_PATH,
       method: 'GET',
-      headers: { 'authentication': authHeader },
+      headers: { authentication: authHeader },
       agent: keepAliveAgent,
       timeout: 5000,
     };
@@ -68,7 +80,9 @@ const authzWithExternalServer = (
     const req = https.request(options, (res: IncomingMessage) => {
       let data = '';
 
-      res.on('data', chunk => { data += chunk; });
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
       res.on('end', () => {
         if (res.statusCode === 200) {
           resolve(true);
@@ -99,7 +113,6 @@ const generateErrorResponse = (
     statusDescription: string,
     body: string
 ): CloudFrontRequestResult => {
-
   return {
     status: status.toString(),
     statusDescription,
