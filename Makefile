@@ -27,6 +27,14 @@ build-lambda:
 ### docker
 ########################################
 
-docker:
+docker-build: docker-build-authz #docker-build-lambda
+docker-build-authz:
 	@docker compose build authz
+docker-build-lambda:
 	@docker compose build lambda
+
+docker-push: docker-push-authz #docker-push-lambda
+docker-push-authz:
+	@docker compose push authz
+docker-push-lambda:
+	@docker compose push lambda

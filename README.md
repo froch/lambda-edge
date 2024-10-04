@@ -133,7 +133,7 @@ $ awslocal cloudfront create-distribution \
 # http://${distribution-id}.cloudfront.localhost.localstack.cloud:4566/this-is-fine.gif
 ```
 
-### Create some ECR repositories
+### Build and push Docker images to localstack ECR
 
 - ECR on localstack also requires a [PRO subscription](https://www.localstack.cloud/pricing).
 - Alright, alright, alright.
@@ -143,4 +143,9 @@ $ awslocal ecr create-repository \
     --repository-name "${repo}" \
     --endpoint-url "${AWS_LOCAL_ENDPOINT_URL}" \
     --region "${AWS_LOCAL_REGION}")
+```
+
+- Now we can build and push our Docker images.
+```bash
+$ make docker-push
 ```
