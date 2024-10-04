@@ -1,89 +1,74 @@
-import { APIGatewayProxyHandler } from 'aws-lambda';
-import https from 'https';
-import AWS from 'aws-sdk';
+import { CloudFrontRequestEvent, CloudFrontRequestCallback, CloudFrontRequestResult } from 'aws-lambda';
+import https, { RequestOptions } from 'https';
+import { IncomingMessage } from 'http';
 
-const s3 = new AWS.S3({
-  endpoint: 'http://localstack:4566',
-  s3ForcePathStyle: true, // localstack requirement
-});
+const keepAliveAgent = new https.Agent({ keepAlive: true, timeout: 5000 });
 
-const AUTHZ_HTTP_200 = 'https://external-server/200';
-const AUTHZ_HTTP_403 = 'https://external-server/403';
-
-const keepAliveAgent = new https.Agent({ keepAlive: true });
-
-// HTML content for the error response
-const errorContent = `
+const AUTH_ERROR_HTML = `
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>Authentication Error</title>
+    <title>Authz: NOPE</title>
   </head>
   <body>
-    <p>Authentication Error</p>
+    <p>That's a Texas-Size NOPE from me, dawg.</p>
   </body>
 </html>
 `;
 
-export const handler: APIGatewayProxyHandler = async (event, _context) => {
+const EXTERNAL_SERVER_HOSTNAME = 'external-server.com';
+const AUTHORIZATION_PATH = '/auth-check';
+
+export const handler = async (
+    event: CloudFrontRequestEvent,
+    context: any,
+    callback: CloudFrontRequestCallback
+): Promise<void> => {
+
   const request = event.Records[0].cf.request;
   const headers = request.headers;
-  let authHeader = '';
-
-  if (headers['authentication']) {
-    authHeader = headers['authentication'][0].value;
-  } else {
-    return {
-      statusCode: 403,
-      body: 'Authentication header missing',
-    };
-  }
 
   try {
-    const isAuthorized = await authorizeWithExternalServer(authHeader);
+    const authHeader = headers['authentication']?.[0]?.value || '';
+
+    if (!authHeader) {
+      return callback(null, generateErrorResponse(403, 'Authz: NOPE', AUTH_ERROR_HTML));
+    }
+
+    const isAuthorized = await authzWithExternalServer(authHeader);
 
     if (isAuthorized) {
-      return request; // forward to S3
+      return callback(null, request);
     } else {
-      return {
-        status: '403',
-        statusDescription: 'Forbidden',
-        body: errorContent,
-        headers: {
-          'content-type': [{ key: 'Content-Type', value: 'text/html' }],
-        },
-      };
+      return callback(null, generateErrorResponse(403, 'Authz: NOPE', AUTH_ERROR_HTML));
     }
   } catch (error) {
-    console.error('Error during authorization or S3 interaction:', error);
-    return {
-      status: '500',
-      statusDescription: 'Internal Server Error',
-      body: 'An error occurred',
-    };
+    console.error('Authorization error:', error);
+    return callback(null, generateErrorResponse(500, 'Internal Server Error', 'An internal error occurred.'));
   }
 };
 
+// Call the external Authz server
+const authzWithExternalServer = (
+    authHeader: string
+): Promise<boolean> => {
 
-// Call the remote auth server
-const authorizeWithExternalServer = (authHeader: string): Promise<boolean> => {
   return new Promise((resolve, reject) => {
-    options := {
+    const options: RequestOptions = {
+      hostname: EXTERNAL_SERVER_HOSTNAME,
       port: 443,
-      path: '/auth-check',
+      path: AUTHORIZATION_PATH,
       method: 'GET',
-      headers: {
-        'authentication': authHeader
-      },
-      agent: keepAliveAgent
+      headers: { 'authentication': authHeader },
+      agent: keepAliveAgent,
+      timeout: 5000,
     };
 
-    if
-
-    const req = https.request(options, (res) => {
+    const req = https.request(options, (res: IncomingMessage) => {
       let data = '';
-      res.on('data', chunk => data += chunk);
+
+      res.on('data', chunk => { data += chunk; });
       res.on('end', () => {
         if (res.statusCode === 200) {
           resolve(true);
@@ -94,10 +79,34 @@ const authorizeWithExternalServer = (authHeader: string): Promise<boolean> => {
     });
 
     req.on('error', (error) => {
-      console.error('Error contacting external auth server:', error);
+      console.error('Authz failed:', error);
       reject(error);
+    });
+
+    req.on('timeout', () => {
+      console.error('Authz request timed out.');
+      req.abort();
+      reject(new Error('Authz request timed out.'));
     });
 
     req.end();
   });
+};
+
+// Generate a CloudFront-compatible error response
+const generateErrorResponse = (
+    status: number,
+    statusDescription: string,
+    body: string
+): CloudFrontRequestResult => {
+
+  return {
+    status: status.toString(),
+    statusDescription,
+    body,
+    headers: {
+      'content-type': [{ key: 'Content-Type', value: 'text/html' }],
+      'cache-control': [{ key: 'Cache-Control', value: 'no-store' }],
+    },
+  };
 };

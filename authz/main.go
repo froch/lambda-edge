@@ -2,8 +2,14 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
+)
+
+const (
+	ServerBind = "0.0.0.0"
+	ServerPort = 8080
 )
 
 func main() {
@@ -16,16 +22,16 @@ func main() {
 	})
 
 	mux.HandleFunc("/403", func(w http.ResponseWriter, r *http.Request) {
-		response := map[string]string{"message": "OK"}
+		response := map[string]string{"message": "Nope"}
 		WriteOut(w, http.StatusForbidden, response)
 	})
 
 	server := &http.Server{
-		Addr:    "0.0.0.0:8080",
+		Addr:    fmt.Sprintf("%s:%d", ServerBind, ServerPort),
 		Handler: loggedMux,
 	}
 
-	slog.Info("Starting server on :8080")
+	slog.Info(fmt.Sprintf("Starting server on %s:%d", ServerBind, ServerPort))
 	if err := server.ListenAndServe(); err != nil {
 		slog.Error("Server failed", "error", err)
 	}

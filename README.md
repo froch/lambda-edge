@@ -48,7 +48,7 @@
 ### 2. Build the Docker images
 - Package the Lambda@Edge function into a Docker container, using the AWS runtime image.
 - Build the Authz Docker image.
-- Run the Lambda container in localstack and ensure it communicates with Authz over DinD (Docker in Docker).
+- Run the Lambda container in localstack and ensure it communicates with Authz.
 
 ### 3. Local Iteration
 - Add a file to the localstack S3 bucket, ensure it's unprotected.
@@ -75,7 +75,11 @@
 
 ---
 
-## HOWTO 
+## HOWTO
+
+- Most of these steps are taken care of during localstack boot.
+- We won't need to run all these commands, but we include them here for reference.
+- Also, take a peek at the `Makefile`; it is our friend.
 
 ### Create an S3 bucket and upload an image
 
