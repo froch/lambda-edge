@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-set -euxo pipefail
+set -euo pipefail
 
 BASEDIR=$(dirname "$0")
+source "${BASEDIR}/logs.sh"
 
 AWS_LOCAL_ENDPOINT_URL="http://localhost:4566"
 AWS_LOCAL_REGION="us-east-1"
@@ -12,10 +13,11 @@ S3_KEY_NAME="this-is-fine.gif"
 main() {
   s3_create_bucket
   s3_upload_file
+  s3_list_bucket
 }
 
 s3_create_bucket() {
-  log_info "s3" "creating bucket: ${S3_BUCKET_NAME}"
+  log_info "s3" "creating bucket: s3://${S3_BUCKET_NAME}"
   awslocal s3 mb \
     "s3://${S3_BUCKET_NAME}" \
     --endpoint-url "${AWS_LOCAL_ENDPOINT_URL}" \
@@ -23,24 +25,28 @@ s3_create_bucket() {
 }
 
 s3_upload_file() {
-  log_info "s3" "uploading file: ${BASEDIR}/${FILE_NAME} --> s3://${S3_BUCKET_NAME}/${S3_KEY_NAME}"
-  awslocal s3 cp \
-    "${BASEDIR}/${FILE_NAME}" \
-    "s3://${S3_BUCKET_NAME}/${S3_KEY_NAME}" \
-    --endpoint-url "${AWS_LOCAL_ENDPOINT_URL}" \
-    --region "${AWS_LOCAL_REGION}"
+  for FILE in "${BASEDIR}"/*.gif; do
+    FILE_NAME=$(basename "${FILE}")
+    S3_KEY_NAME="${FILE_NAME}"
+    log_info "s3" "uploading file: ${FILE} --> s3://${S3_BUCKET_NAME}/${S3_KEY_NAME}"
+    awslocal s3 cp \
+      "${FILE}" \
+      "s3://${S3_BUCKET_NAME}/${S3_KEY_NAME}" \
+      --endpoint-url "${AWS_LOCAL_ENDPOINT_URL}" \
+      --region "${AWS_LOCAL_REGION}"
+  done
 }
 
-log_info(){
-  # $1 is the module name
-  # $2 is the message
-  BL_GREEN='\033[0;92m'
-  BL_GRAY='\033[0;90m'
-  B_GRAY='\033[1;37m'
-  NC='\033[0m'
-  set +u
-  echo -e "${BL_GRAY}[$(date "+%Y-%m-%dT%T%z")]${NC} ${BL_GREEN}INFO${NC} ${BL_GRAY}$1${NC} // ${B_GRAY}$2${NC}"
-  set -u
+s3_list_bucket() {
+  log_info "s3" "listing bucket: s3://${S3_BUCKET_NAME}"
+  contents=$(awslocal s3 ls \
+    "s3://${S3_BUCKET_NAME}" \
+    --endpoint-url "${AWS_LOCAL_ENDPOINT_URL}" \
+    --region "${AWS_LOCAL_REGION}")
+  echo "${contents}" | while IFS= read -r line
+  do
+    log_info "s3" "bucket contents: ${line}"
+  done
 }
 
 main
