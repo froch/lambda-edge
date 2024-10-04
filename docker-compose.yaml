@@ -7,7 +7,7 @@ services:
       context: ./authz
       dockerfile: Dockerfile
     networks:
-      - nimble
+      - froch
     ports:
       - 8080:8080
 
@@ -17,7 +17,7 @@ services:
       context: ./lambda
       dockerfile: Dockerfile
     networks:
-      - nimble
+      - froch
     environment:
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test
@@ -42,12 +42,12 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - .localstack/bootstrap:/etc/localstack/init/ready.d/
     networks:
-      - nimble
+      - froch
     healthcheck:
       test: curl -s http://localhost:4566/health | grep 'running'
       interval: 5s
       retries: 20
 
 networks:
-  nimble:
+  froch:
     driver: bridge

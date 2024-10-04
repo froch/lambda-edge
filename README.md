@@ -1,7 +1,7 @@
 # Lambda@Edge SSO POC
 
 <div style="text-align: center;">
-  <img src="./tools/assets/aws-architecture.png" alt="AWS Architecture">
+  <img src="https://github.com/froch/lambda-edge/blob/main/tools/assets/aws-architectture.png?raw=true" alt="AWS Architecture">
 </div>
 
 ## Source Material
