@@ -14,7 +14,6 @@ S3_KEY_NAME="this-is-fine.gif"
 main() {
   s3_create_bucket
   s3_upload_file
-  s3_list_bucket
 }
 
 s3_create_bucket() {
@@ -35,18 +34,6 @@ s3_upload_file() {
       "s3://${S3_BUCKET_NAME}/${S3_KEY_NAME}" \
       --endpoint-url "${AWS_LOCAL_ENDPOINT_URL}" \
       --region "${AWS_LOCAL_REGION}"
-  done
-}
-
-s3_list_bucket() {
-  log_info "s3" "listing bucket: s3://${S3_BUCKET_NAME}"
-  contents=$(awslocal s3 ls \
-    "s3://${S3_BUCKET_NAME}" \
-    --endpoint-url "${AWS_LOCAL_ENDPOINT_URL}" \
-    --region "${AWS_LOCAL_REGION}")
-  echo "${contents}" | while IFS= read -r line
-  do
-    log_info "s3" "bucket contents: ${line}"
   done
 }
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euxo pipefail
+set -euo pipefail
 
 BASEDIR=$(dirname "$0")
 source "${BASEDIR}/logs.sh"

@@ -26,17 +26,18 @@ services:
       - localstack
 
   localstack:
-    image: localstack/localstack:latest
+    image: localstack/localstack-pro:latest
     ports:
       - "4566:4566"                      # main localstack endpoint
-      - "4571:4571"                      # cloudfront
+      - "127.0.0.1:4510-4559:4510-4559"  # external services port range
       - "127.0.0.1:5053:53"              # Expose DNS/tcp to host (on port 5053)
       - "127.0.0.1:5053:53/udp"          # Expose DNS/udp to host (on port 5053)
     environment:
-      - SERVICES=s3,cloudfront,lambda
-      - AWS_DEFAULT_REGION=us-east-1
-      - DEBUG=1
-      - LAMBDA_IGNORE_ARCHITECTURE=1
+      AWS_DEFAULT_REGION: us-east-1
+      DEBUG: 1
+      LAMBDA_IGNORE_ARCHITECTURE: 1
+      LOCALSTACK_AUTH_TOKEN: $LOCALSTACK_AUTH_TOKEN
+      SERVICES: s3,cloudfront,lambda
     volumes:
       - .localstack:/var/lib/localstack
       - /var/run/docker.sock:/var/run/docker.sock
