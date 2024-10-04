@@ -6,7 +6,8 @@ source "${BASEDIR}/logs.sh"
 
 AWS_LOCAL_ENDPOINT_URL="http://localhost:4566"
 AWS_LOCAL_REGION="us-east-1"
-FILE_NAME="this-is-fine.gif"
+
+FILE_NAME="s3-this-is-fine.gif"
 S3_BUCKET_NAME="froch-bucket"
 S3_KEY_NAME="this-is-fine.gif"
 
@@ -51,6 +52,7 @@ s3_list_bucket() {
 
 main
 
+# example S3 URLs
 # http://localhost:4566/froch-bucket/this-is-fine.gif
 # http://froch-bucket.s3.us-east-1.localhost.localstack.cloud:4566/this-is-fine.gif
 # http://froch-bucket.s3.localhost.localstack.cloud:4566/this-is-fine.gif
