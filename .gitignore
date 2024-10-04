@@ -2,6 +2,7 @@
 
 .idea/
 .envrc
+authz/build/
 
 ### golang
 ### see:

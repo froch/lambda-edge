@@ -6,7 +6,8 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "clean": "rm -rf dist node_modules pnpm-lock.yaml && pnpm install",
+    "clean": "rm -rf dist",
+    "nuke": "rm -rf dist node_modules pnpm-lock.yaml && pnpm install",
     "fmt": "prettier --write .",
     "lint": "eslint .",
     "start": "ts-node src/index.ts",
