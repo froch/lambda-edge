@@ -1,43 +1,57 @@
-# Lambda@Edge Authorization POC
+# Lambda@Edge SSO POC
 
-## Overview
-This project implements a proof-of-concept (POC) for authorizing requests to Amazon CloudFront using a Lambda@Edge function.
+<div style="text-align: center;">
+  <img src="./tools/assets/aws-architecture.png" alt="AWS Architecture">
+</div>
 
-The funciton will forward authorization data to an external server. The setup mimics a real-world scenario where content is served from CloudFront, while existing authorization mechanisms remain intact.
+## Source Material
 
-## Goals
-- Secure CloudFront content distribution using header-based external server authorization.
-- Dockerize the Lambda@Edge function to ensure it can be easily tested and deployed.
-- Implement infrastructure as code (IaC) with Terraform to provision CloudFront, Lambda@Edge, and related AWS resources.
+- [Whitepaper (2023)](https://aws.amazon.com/blogs/networking-and-content-delivery/external-server-authorization-with-lambdaedge/)
+- [Lambda@Edge product page](https://aws.amazon.com/lambda/edge/)
+- [Lambda@Edge developer guide](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-examples.html)
+- 
+
+## Major Goals
+- Secure CloudFront content distribution using external server Authz.
+- Dockerize the Lambda@Edge function and the Authz server.
+- Translate the working local config to Terraform HCL.
 
 ## Project Structure
 
 ```
-├── docker
+├── authz
 ├── infrastructure
 ├── lambda
-└── scripts
+└── tools
 ```
 
-- **docker/**: Docker setup for building and testing the Lambda function locally.
-- **infrastructure/**: Contains Terraform configurations for AWS resources.
-- **lambda/**: Node.js code for the Lambda@Edge function to handle external authorization.
-- **scripts/**: Utility scripts for deployment and testing.
+- **.localstack**: Config files for [localstack](https://docs.localstack.cloud/user-guide/aws/lambda/), a local AWS cloud stack for breaking things.
+- **authz**: A simple golang webserver with which to iterate on requests and responses.
+- **infrastructure**: Terraform HCL configuration files to provision AWS resources.
+- **lambda**: Typescript code for the Lambda@Edge function described in the whitepaper.
+- **tools**: Scripts and helpers for the above
 
 ## Plan of Attack
 
-### 1. Infrastructure Setup (Terraform)
-- Set up a CloudFront distribution with an S3 origin.
-- Configure Lambda@Edge function to trigger on the Viewer-Request event.
-- Provision an external authorization server using a simple PHP server.
-- Define networking rules and security policies to ensure secure communication between the external server and Lambda@Edge.
+### 1. Building the Lambda@Edge Function and the Authz server
+- Build the Typescript Lambda@Edge function that forwards requests to an external server for authorization.
+- Create an S3 bucket whose contents we want to protect.
+- Write a simple, surrogate Authz server to build out behavior
+- Bonus points for localhost encryption for data in transit
 
-### 2. Lambda@Edge Dockerization
-- Write a Node.js Lambda function that handles authentication and forwards requests to the external server.
-- Dockerize the Lambda function to test it locally before deployment.
-- Ensure the Docker image is compatible with AWS Lambda container requirements.
+### 2. Building the Docker images
+- Package the Lambda@Edge function into a Docker container, using the AWS runtime image.
+- Build the Authz Docker image.
+- Run the Lambda container in localstack and ensure it communicates with Authz over DinD (Docker in Docker)
 
 ### 3. Deployment & Testing
-- Use Terraform to deploy the CloudFront distribution, Lambda@Edge function, and external server.
-- Test the setup by sending valid and invalid authorization headers.
-- Monitor logs and output using AWS CloudWatch for debugging and optimization.
+- Add a file to the localstack S3 bucket, ensure it's unprotected.
+- Front the localstack S3 bucket with localstack's CloudFront
+- Ensure the file remains accessible
+- Iterate on the Lambda@Edge function and Authz server until we can toggle between protected and unprotected states
+- Translate the local configs to their big-brother AWS resource representations with Terraform HCL
+
+## HOWTO 
+
+### Create an S3 bucket and upload an image
+[infrastructure](infrastructure)
