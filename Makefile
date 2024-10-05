@@ -57,7 +57,13 @@ docker-run-lambda: docker-build-lambda
 
 localstack-up:
 	@docker compose up localstack
+
 localstack-lambda: docker-push-lambda
 	@docker compose exec localstack /tmp/lambda/create.sh
+localstack-lambda-get-config:
+	@docker compose exec localstack /tmp/lambda/get-config.sh
+
 localstack-cloudfront:
 	@docker compose exec localstack /tmp/cloudfront/update.sh
+localstack-cloudfront-get-config:
+	@docker compose exec localstack /tmp/cloudfront/get-config.sh
