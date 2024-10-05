@@ -4,6 +4,8 @@
 .PHONY: clean
 
 clean:
+	@docker stop $$(docker ps -a -q) || true
+	@docker rm $$(docker ps -a -q) || true
 	@find .localstack -mindepth 1 -maxdepth 1 ! -name '.gitkeep' -exec rm -rf {} +
 	@rm -rf authz/build
 	@rm -rf lambda/dist
@@ -62,8 +64,12 @@ localstack-lambda: docker-push-lambda
 	@docker compose exec localstack /tmp/lambda/create.sh
 localstack-lambda-get-config:
 	@docker compose exec localstack /tmp/lambda/get-config.sh
+localstack-lambda-get-iam:
+	@docker compose exec localstack /tmp/lambda/get-iam.sh
 
 localstack-cloudfront:
 	@docker compose exec localstack /tmp/cloudfront/update.sh
 localstack-cloudfront-get-config:
 	@docker compose exec localstack /tmp/cloudfront/get-config.sh
+localstack-cloudfront-get-origin-request-policy:
+	@docker compose exec localstack /tmp/cloudfront/get-origin-request-policy.sh
