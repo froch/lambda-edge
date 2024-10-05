@@ -25,6 +25,7 @@ cloudfront_create_distribution() {
     log_info "cloudfront" "${line}"
   done
 
+  # write cloudfront id to file for later
   AWS_CLOUDFRONT_ID=$(echo "${out}" | jq -r '.Distribution.Id')
   if [[ -n "${AWS_CLOUDFRONT_ID}" ]]; then
     echo "${AWS_CLOUDFRONT_ID}" > "${AWS_CLOUDFRONT_ID_FILE}"
