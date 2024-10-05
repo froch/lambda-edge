@@ -1,14 +1,32 @@
 {
+  "CacheBehaviors": {
+    "Quantity": 1,
+    "Items": [
+      {
+        "PathPattern": "*",
+        "TargetOriginId": "<our-origin-id>",
+        "ViewerProtocolPolicy": "allow-all",
+        "LambdaFunctionAssociations": {
+          "Quantity": 1,
+          "Items": [
+            {
+              "EventType": "viewer-request",
+              "LambdaFunctionARN": "arn:aws:lambda:us-east-1:000000000000:function:lambda"
+            }
+          ]
+        }
+      }
+    ]
+  },
   "DefaultCacheBehavior": {
     "LambdaFunctionAssociations": {
       "Quantity": 1,
       "Items": [
         {
-          "LambdaFunctionARN": "arn:aws:lambda:us-east-1:000000000000:function:lambda",
-          "EventType": "viewer-request"
+          "EventType": "viewer-request",
+          "LambdaFunctionARN": "arn:aws:lambda:us-east-1:000000000000:function:lambda"
         }
       ]
-    },
-    "OriginRequestPolicyId": "<your-origin-request-policy-id>"
+    }
   }
 }

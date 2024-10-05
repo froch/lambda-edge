@@ -5,7 +5,7 @@
     "HeaderBehavior": "whitelist",
     "Headers": {
       "Quantity": 1,
-      "Items": ["authentication"]
+      "Items": ["Authentication"]
     }
   },
   "CookiesConfig": {

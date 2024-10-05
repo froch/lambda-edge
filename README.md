@@ -227,8 +227,6 @@ $ make localstack-cloudfront
 - We then merge the chunks of config we want to update with the rest of the existing config.
 - Only then, can we call the `update-distribution` API with the full config, providing the ETag as proof.
 
-```bash
-
 ### Run the authz server in localhost docker
 
 - First, the TLDR;

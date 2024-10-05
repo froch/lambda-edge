@@ -1,0 +1,51 @@
+{
+  "Origins": {
+    "Quantity": 1,
+    "Items": [
+      {
+        "Id": "froch-origin",
+        "DomainName": "froch.s3.localhost.localstack.cloud:4566",
+        "OriginPath": "",
+        "CustomOriginConfig": {
+          "HTTPPort": 80,
+          "HTTPSPort": 443,
+          "OriginProtocolPolicy": "http-only"
+        }
+      }
+    ]
+  },
+  "DefaultCacheBehavior": {
+    "TargetOriginId": "froch-origin",
+    "ViewerProtocolPolicy": "allow-all",
+    "AllowedMethods": {
+      "Quantity": 2,
+      "Items": [
+        "HEAD",
+        "GET"
+      ],
+      "CachedMethods": {
+        "Quantity": 2,
+        "Items": [
+          "HEAD",
+          "GET"
+        ]
+      }
+    },
+    "LambdaFunctionAssociations": {
+      "Quantity": 0
+    },
+    "ForwardedValues": {
+      "QueryString": true
+    },
+    "MinTTL": 0
+  },
+  "Logging": {
+    "Enabled": true,
+    "IncludeCookies": false,
+    "Bucket": "logs.s3.localhost.localstack.cloud:4566",
+    "Prefix": "cloudfront/"
+  },
+  "Enabled": true,
+  "Comment": "CloudFront distribution with S3 logging",
+  "PriceClass": "PriceClass_All"
+}

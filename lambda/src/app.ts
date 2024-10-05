@@ -2,10 +2,12 @@ import { CloudFrontRequestEvent, CloudFrontRequestCallback, CloudFrontRequestRes
 import https, { RequestOptions } from 'https';
 import { IncomingMessage } from 'http';
 
-const keepAliveAgent = new https.Agent({ keepAlive: true, timeout: 5000 });
-const AUTHZ_HOSTNAME = 'authz';  // docker-compose service name; localstack lambda runs in the same bridged network
-const OK_PATH = '/200';
-const NOPE_PATH = '/403';
+const AUTHZ_HOSTNAME = process.env.AUTHZ_HOSTNAME || 'authz';
+const OK_PATH = process.env.OK_PATH || '/200';
+const NOPE_PATH = process.env.NOPE_PATH || '/403';
+const KEEP_ALIVE_TIMEOUT = parseInt(process.env.KEEP_ALIVE_TIMEOUT || '5000', 10);
+
+const keepAliveAgent = new https.Agent({ keepAlive: true, timeout: KEEP_ALIVE_TIMEOUT });
 
 const AUTH_ERROR_HTML = `
 <!DOCTYPE html>
@@ -20,51 +22,33 @@ const AUTH_ERROR_HTML = `
 </html>
 `;
 
-export const handler = async (
-    event: CloudFrontRequestEvent,
-    context: any,
-    callback: CloudFrontRequestCallback
-): Promise<void> => {
+export const handler = (event: CloudFrontRequestEvent, context: any, callback: CloudFrontRequestCallback): void => {
   try {
-    console.log('Event:', JSON.stringify(event));
-    console.log('Context:', JSON.stringify(context));
-    console.log('Callback:', JSON.stringify(callback));
+    const request = validateEventStructure(event);
+    const authHeader = getAuthenticationHeader(request.headers);
 
-    if (event.Records === undefined || event.Records.length === 0) {
-      if(callback !== undefined) {
-        return callback(null, generateErrorResponse(400, 'Bad Request', 'No CloudFront request records.'));
-      }
-      console.log('No CloudFront request records.');
-      return
-    }
-
-    const request = event.Records[0].cf.request;
-    const headers = request.headers;
-
-    const authHeader =
-        headers['authentication'] && headers['authentication'][0] && headers['authentication'][0].value
-            ? headers['authentication'][0].value
-            : '';
-
-    if (authHeader) {
-      console.log('Auth header:', authHeader);
-      // return callback(null, generateErrorResponse(403, 'Authz: NOPE', AUTH_ERROR_HTML));
-    }
-
-    const isAuthorized = await authzWithExternalServer(authHeader);
-
-    if (isAuthorized) {
-      return callback(null, request);
-    } else {
+    if (!authHeader) {
       return callback(null, generateErrorResponse(403, 'Authz: NOPE', AUTH_ERROR_HTML));
     }
+
+    authzWithExternalServer(authHeader)
+        .then((isAuthorized) => {
+          if (isAuthorized) {
+            return callback(null, request);
+          } else {
+            return callback(null, generateErrorResponse(403, 'Authz: NOPE', AUTH_ERROR_HTML));
+          }
+        })
+        .catch((error) => {
+          console.error('Authorization error:', error);
+          return callback(null, generateErrorResponse(500, 'Internal Server Error', 'An internal error occurred.'));
+        });
   } catch (error) {
-    console.error('Authz error:', error);
+    console.error('Handler error:', error);
     return callback(null, generateErrorResponse(500, 'Internal Server Error', 'An internal error occurred.'));
   }
 };
 
-// Call the external Authz server
 const authzWithExternalServer = (authHeader: string): Promise<boolean> => {
   return new Promise((resolve, reject) => {
     const options: RequestOptions = {
@@ -72,47 +56,48 @@ const authzWithExternalServer = (authHeader: string): Promise<boolean> => {
       port: 8080,
       path: OK_PATH,
       method: 'GET',
-      headers: { authentication: authHeader },
+      headers: { 'authentication': authHeader },
       agent: keepAliveAgent,
-      timeout: 5000,
+      timeout: KEEP_ALIVE_TIMEOUT,
     };
 
     const req = https.request(options, (res: IncomingMessage) => {
       let data = '';
-
       res.on('data', (chunk) => {
         data += chunk;
       });
       res.on('end', () => {
-        if (res.statusCode === 200) {
-          resolve(true);
-        } else {
-          resolve(false);
-        }
+        res.statusCode === 200 ? resolve(true) : resolve(false);
       });
     });
 
     req.on('error', (error) => {
-      console.error('Authz failed:', error);
+      console.error('Authorization request error:', error);
       reject(error);
     });
 
     req.on('timeout', () => {
-      console.error('Authz request timed out.');
+      console.error('Authorization request timed out.');
       req.abort();
-      reject(new Error('Authz request timed out.'));
+      reject(new Error('Authorization request timed out.'));
     });
 
     req.end();
   });
 };
 
-// Generate a CloudFront-compatible error response
-const generateErrorResponse = (
-    status: number,
-    statusDescription: string,
-    body: string
-): CloudFrontRequestResult => {
+const validateEventStructure = (event: CloudFrontRequestEvent) => {
+  if (!event.Records || event.Records.length === 0 || !event.Records[0].cf) {
+    throw new Error('Invalid event structure');
+  }
+  return event.Records[0].cf.request;
+};
+
+const getAuthenticationHeader = (headers: Record<string, any>) => {
+  return headers['authentication'] && headers['authentication'][0]?.value;
+};
+
+const generateErrorResponse = (status: number, statusDescription: string, body: string): CloudFrontRequestResult => {
   return {
     status: status.toString(),
     statusDescription,

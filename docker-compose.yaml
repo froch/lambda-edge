@@ -31,6 +31,7 @@ services:
       DEBUG: 1
       LAMBDA_IGNORE_ARCHITECTURE: 1
       LOCALSTACK_AUTH_TOKEN: $LOCALSTACK_AUTH_TOKEN
+      PERSISTENCE: 1
     volumes:
       - ./.localstack:/var/lib/localstack
       - /var/run/docker.sock:/var/run/docker.sock # dind

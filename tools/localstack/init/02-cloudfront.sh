@@ -37,3 +37,6 @@ cloudfront_create_distribution() {
 }
 
 main
+
+# example URL
+# http://${distribution-id}.cloudfront.localhost.localstack.cloud:4566/this-is-fine.gif
