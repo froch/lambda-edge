@@ -20,8 +20,8 @@
 ## Source Material
 
 - [Whitepaper (2023)](https://aws.amazon.com/blogs/networking-and-content-delivery/external-server-authorization-with-lambdaedge/)
-- [Lambda@Edge product page](https://aws.amazon.com/lambda/edge/)
 - [Lambda@Edge developer guide](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-examples.html) 
+- [AWS samples](https://github.com/aws-samples/cloudfront-authorization-at-edge)
 
 ## Major Goals
 - Secure CloudFront content distribution using external server Authz.
@@ -54,7 +54,7 @@
 - Build the Typescript Lambda@Edge function that forwards requests to an external server for authorization.
 - Create an S3 bucket whose contents we want to protect.
 - Write a simple, surrogate Authz server to build out behavior.
-- Bonus points for localhost encryption for data in transit.
+- Bonus points for localhost encryption of data in transit.
 
 ### 2. Build the Docker images
 - Package the Lambda@Edge function into a Docker container, using the AWS runtime image.
@@ -164,12 +164,14 @@ $ awslocal ecr create-repository \
 
 - For our Lambda function to access things, we need to grant it the necessary permissions.
 - Our bootstrap scripts will handle this.
+
 - First, let's create a role which Lambda can assume.
 ```bash
 $ awslocal iam create-role \
     --role-name "${AWS_IAM_LAMBDA_ROLE_NAME}" \
     --assume-role-policy-document "${AWS_IAM_LAMBDA_TRUST_POLICY_JSON}")
 ```
+
 - Let's grant it pull access from ECR
 ```bash
 $ awslocal iam create-policy \
@@ -179,7 +181,8 @@ $ awslocal iam attach-role-policy \
       --role-name "${AWS_IAM_LAMBDA_ROLE_NAME}" \
       --policy-arn "arn:aws:iam::000000000000:policy/${AWS_IAM_LAMBDA_ECR_POLICY_NAME}"
 ```
-- And let's also allow it to write to CloudaWatch logs
+
+- And let's also allow it to write to CloudWatch logs
 ```bash
 $ awslocal iam create-policy \
       --policy-name "${AWS_IAM_LAMBDA_LOGS_POLICY_NAME}" \
@@ -219,6 +222,13 @@ $ awslocal lambda create-function \
 $ make localstack-cloudfront
 ```
 
+- In more detail; to update CloudFront, we can't just update parts of it through the API.
+- We have to fetch the full current CloudFront distro's config, along with its current ETag.
+- We then merge the chunks of config we want to update with the rest of the existing config.
+- Only then, can we call the `update-distribution` API with the full config, providing the ETag as proof.
+
+```bash
+
 ### Run the authz server in localhost docker
 
 - First, the TLDR;
@@ -226,6 +236,6 @@ $ make localstack-cloudfront
 $ make docker-run-authz
 ```
 
-- The internals of localstack run on the same bridged host network
-- Thus, they can resolve containers running on the host.
-- As such, the authz server is visible to Lambda, ECS, EKS, etc.
+- The internals of localstack run on the same bridged host network as regular containers.
+- Nifty, they can see and talk to each other.
+- This goes for all container runners in localstack: Lambda, ECS, EKS, etc.
