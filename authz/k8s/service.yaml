@@ -1,0 +1,22 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: authz
+  labels:
+      app: authz
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: authz
+  template:
+    metadata:
+      labels:
+        app: authz
+    spec:
+      containers:
+        - name: authz
+          image: $AWS_ECR_REPOSITORY/authz
+          ports:
+            - containerPort: 8080

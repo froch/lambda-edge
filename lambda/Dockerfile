@@ -5,6 +5,6 @@ FROM node:lts-alpine AS builder
   COPY . .
   RUN pnpm run build
 
-FROM public.ecr.aws/lambda/nodejs:20 AS lambda
+FROM public.ecr.aws/lambda/nodejs:20 AS app
   COPY --from=builder /app/dist /var/task
   CMD ["app.handler"]

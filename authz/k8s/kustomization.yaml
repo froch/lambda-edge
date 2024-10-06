@@ -1,0 +1,5 @@
+---
+namespace: froch
+
+resources:
+  - deployment.yaml

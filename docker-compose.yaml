@@ -2,9 +2,9 @@
 services:
 
   authz:
-    image: 000000000000.dkr.ecr.us-east-1.localhost.localstack.cloud:4566/authz
+    image: $AWS_ECR_REPOSITORY/authz
     build:
-      context: ./authz
+      context: ./authz/src
       dockerfile: Dockerfile
     networks:
       - froch
@@ -12,7 +12,7 @@ services:
       - 8080:8080
 
   lambda:
-    image: 000000000000.dkr.ecr.us-east-1.localhost.localstack.cloud:4566/lambda
+    image: $AWS_ECR_REPOSITORY/lambda
     build:
       context: ./lambda
       dockerfile: Dockerfile

@@ -1,0 +1,13 @@
+---
+apiVersion: skaffold/v4beta11
+kind: Config
+
+manifests:
+  kustomize:
+    paths:
+      - .
+
+deploy:
+  kubeContext: $AWS_EKS_KUBECONTEXT
+  kubectl:
+    defaultNamespace: froch

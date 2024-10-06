@@ -20,10 +20,17 @@ func main() {
 		response := map[string]string{"message": "OK"}
 		WriteOut(w, http.StatusOK, response)
 	})
-
 	mux.HandleFunc("/403", func(w http.ResponseWriter, r *http.Request) {
 		response := map[string]string{"message": "Nope"}
 		WriteOut(w, http.StatusForbidden, response)
+	})
+	mux.HandleFunc("/headers", func(w http.ResponseWriter, r *http.Request) {
+		for name, values := range r.Header {
+			for _, value := range values {
+				slog.Info("Header", "name", name, "value", value)
+			}
+		}
+		WriteOut(w, http.StatusOK, http.StatusOK)
 	})
 
 	server := &http.Server{
