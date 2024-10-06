@@ -24,3 +24,17 @@ spec:
             requests:
               memory: "64Mi"
               cpu: "128m"
+          livenessProbe:
+            httpGet:
+              path: /200
+              port: 8080
+            initialDelaySeconds: 1
+            periodSeconds: 10
+            timeoutSeconds: 1
+          readinessProbe:
+            httpGet:
+              path: /200
+              port: 8080
+            initialDelaySeconds: 1
+            periodSeconds: 10
+            timeoutSeconds: 1

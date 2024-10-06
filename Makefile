@@ -91,7 +91,7 @@ k8s-deploy-authz:
 	  cp deployment.yaml deployment.yaml.bak; \
 	  envsubst < skaffold.yaml.bak > skaffold.yaml; \
 	  envsubst < deployment.yaml.bak > deployment.yaml; \
-	  skaffold render > /tmp/skaffold.yaml; \
+	  skaffold deploy; \
 	  mv -f skaffold.yaml.bak skaffold.yaml; \
 	  mv -f deployment.yaml.bak deployment.yaml; \
 	popd > /dev/null 2>&1;

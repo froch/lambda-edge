@@ -3,3 +3,4 @@ namespace: froch
 
 resources:
   - deployment.yaml
+  - service.yaml
