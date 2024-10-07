@@ -10,6 +10,16 @@ on:
 
 jobs:
 
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    environment: CI
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      - run: make test-lambda
+
   build:
     name: Build Image
     runs-on: ubuntu-latest

@@ -11,6 +11,20 @@ clean:
 	@rm -rf lambda/dist
 
 ########################################
+### tests
+########################################
+
+test-authz:
+	@pushd ./authz/src > /dev/null 2>&1;  \
+	  go clean -testcache; \
+	  go test -v ./...; \
+	popd > /dev/null 2>&1;
+test-lambda:
+	@pushd lambda > /dev/null 2>&1; \
+	  pnpm test; \
+	popd > /dev/null 2>&1;
+
+########################################
 ### build
 ########################################
 .PHONY: build build-authz build-lambda
