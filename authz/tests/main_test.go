@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -14,46 +13,19 @@ import (
 // executeRequest is a helper function to test HTTP handlers
 func executeRequest(method, url string, headers map[string]string) *httptest.ResponseRecorder {
 	req, _ := http.NewRequest(method, url, nil)
-
 	for key, value := range headers {
 		req.Header.Set(key, value)
 	}
 
 	rr := httptest.NewRecorder()
 	mux := http.NewServeMux()
-	loggedMux := app.LogRequest(mux)
+	wantAuthzHeader := os.Getenv("AUTHZ_HEADER")
 
-	mux.HandleFunc("/200", func(w http.ResponseWriter, r *http.Request) {
-		response := map[string]string{"message": "OK"}
-		app.WriteOut(w, http.StatusOK, response)
-	})
-	mux.HandleFunc("/403", func(w http.ResponseWriter, r *http.Request) {
-		response := map[string]string{"message": "Nope"}
-		app.WriteOut(w, http.StatusForbidden, response)
-	})
-	mux.HandleFunc("/headers", func(w http.ResponseWriter, r *http.Request) {
-		for name, values := range r.Header {
-			for _, value := range values {
-				slog.Info("Header", "name", name, "value", value)
-			}
-		}
-		app.WriteOut(w, http.StatusOK, http.StatusOK)
-	})
-	mux.HandleFunc("/authz", func(w http.ResponseWriter, r *http.Request) {
-		wantAuthzHeader := os.Getenv("NIMBLE_AUTHZ_HEADER")
-		gotAuthzHeader := r.Header.Get("Authorization")
-		if gotAuthzHeader == "" {
-			app.WriteOut(w, http.StatusForbidden, map[string]string{"message": "No authz header"})
-			return
-		}
-		if gotAuthzHeader != wantAuthzHeader {
-			app.WriteOut(w, http.StatusForbidden, map[string]string{"message": "Wrong authz header"})
-			return
-		}
-		app.WriteOut(w, http.StatusOK, map[string]string{"message": "OK"})
-	})
+	server := app.NewAuthzServer("localhost", 8080, mux, mux)
+	server.RegisterRoutes(wantAuthzHeader)
 
-	loggedMux.ServeHTTP(rr, req)
+	loggedHandler := app.LogRequest(app.LogResponse(server.Mux))
+	loggedHandler.ServeHTTP(rr, req)
 
 	return rr
 }
@@ -63,20 +35,20 @@ func TestWriteOut(t *testing.T) {
 	tests := []struct {
 		name          string
 		status        int
-		body          interface{}
-		expectedBody  string
+		body          *app.BaseResponse
+		expectedBody  *app.BaseResponse
 		expectedError string
 	}{
 		{
 			name:         "StatusOK",
 			status:       http.StatusOK,
-			body:         map[string]string{"message": "OK"},
-			expectedBody: `{"message":"OK"}`,
+			body:         &app.BaseResponse{Message: "OK"},
+			expectedBody: &app.BaseResponse{Message: "OK"},
 		},
 		{
 			name:          "InvalidBody",
 			status:        http.StatusOK,
-			body:          make(chan int),
+			body:          nil,
 			expectedError: "Failed to write response",
 		},
 	}
@@ -90,7 +62,7 @@ func TestWriteOut(t *testing.T) {
 				if !strings.Contains(rr.Body.String(), tt.expectedError) {
 					t.Errorf("Expected error not found: got %v want %v", rr.Body.String(), tt.expectedError)
 				}
-			} else if !strings.Contains(rr.Body.String(), tt.expectedBody) {
+			} else if !strings.Contains(rr.Body.String(), tt.expectedBody.Message) {
 				t.Errorf("Expected body does not match result: got %v want %v", rr.Body.String(), tt.expectedBody)
 			}
 		})
@@ -98,9 +70,10 @@ func TestWriteOut(t *testing.T) {
 }
 
 // TestHandlers tests the HTTP handlers
+// TestHandlers tests the HTTP handlers
 func TestHandlers(t *testing.T) {
-	os.Setenv("NIMBLE_AUTHZ_HEADER", "correct-header")
-	defer os.Unsetenv("NIMBLE_AUTHZ_HEADER")
+	os.Setenv("AUTHZ_HEADER", "correct-header")
+	defer os.Unsetenv("AUTHZ_HEADER")
 
 	tests := []struct {
 		name         string
@@ -108,21 +81,21 @@ func TestHandlers(t *testing.T) {
 		method       string
 		headers      map[string]string
 		expectedCode int
-		expectedBody string
+		expectedBody *app.BaseResponse
 	}{
 		{
 			name:         "200StatusOK",
 			url:          "/200",
 			method:       "GET",
 			expectedCode: http.StatusOK,
-			expectedBody: `{"message":"OK"}`,
+			expectedBody: &app.BaseResponse{Message: "OK"},
 		},
 		{
 			name:         "403StatusForbidden",
 			url:          "/403",
 			method:       "GET",
 			expectedCode: http.StatusForbidden,
-			expectedBody: `{"message":"Nope"}`,
+			expectedBody: &app.BaseResponse{Message: "NOPE"},
 		},
 		{
 			name:         "HeadersOK",
@@ -130,14 +103,14 @@ func TestHandlers(t *testing.T) {
 			method:       "GET",
 			headers:      map[string]string{"X-Test-Header": "test"},
 			expectedCode: http.StatusOK,
-			expectedBody: "200", // because it encodes the status code
+			expectedBody: &app.BaseResponse{Message: "OK"},
 		},
 		{
 			name:         "AuthzNoHeader",
 			url:          "/authz",
 			method:       "GET",
 			expectedCode: http.StatusForbidden,
-			expectedBody: `{"message":"No authz header"}`,
+			expectedBody: &app.BaseResponse{Message: "no Authz header"},
 		},
 		{
 			name:         "AuthzWrongHeader",
@@ -145,7 +118,7 @@ func TestHandlers(t *testing.T) {
 			method:       "GET",
 			headers:      map[string]string{"Authorization": "wrong-header"},
 			expectedCode: http.StatusForbidden,
-			expectedBody: `{"message":"Wrong authz header"}`,
+			expectedBody: &app.BaseResponse{Message: "wrong Authz header"},
 		},
 		{
 			name:         "AuthzCorrectHeader",
@@ -153,7 +126,7 @@ func TestHandlers(t *testing.T) {
 			method:       "GET",
 			headers:      map[string]string{"Authorization": "correct-header"},
 			expectedCode: http.StatusOK,
-			expectedBody: `{"message":"OK"}`,
+			expectedBody: &app.BaseResponse{Message: "OK"},
 		},
 	}
 
@@ -163,8 +136,8 @@ func TestHandlers(t *testing.T) {
 			if status := rr.Code; status != tt.expectedCode {
 				t.Errorf("handler returned wrong status code: got %v want %v", status, tt.expectedCode)
 			}
-			if !strings.Contains(rr.Body.String(), tt.expectedBody) {
-				t.Errorf("handler returned unexpected body: got %v want %v", rr.Body.String(), tt.expectedBody)
+			if !strings.Contains(rr.Body.String(), tt.expectedBody.Message) {
+				t.Errorf("handler returned unexpected body: got %v want %v", rr.Body.String(), tt.expectedBody.Message)
 			}
 		})
 	}

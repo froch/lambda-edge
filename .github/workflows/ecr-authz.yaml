@@ -26,8 +26,12 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ^${{ env.GO_VERSION }}
+          go-version-file: ./authz/go.mod
+          cache: true
+          cache-dependency-path: ./authz/go.sum
 
-      - run: make test-authz
+      - run: |
+          cd authz; go test -v ./...;
 
   build:
     name: Build Image
@@ -78,7 +82,7 @@ jobs:
       - name: Build and push docker image
         uses: docker/build-push-action@v6
         with:
-          context: ./authz/src
+          context: ./authz
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
