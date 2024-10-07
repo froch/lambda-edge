@@ -1,4 +1,4 @@
-package main
+package tests
 
 import (
 	"log/slog"
@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/froch/lambda-edge/authz/app"
 )
 
 // executeRequest is a helper function to test HTTP handlers
@@ -19,15 +21,15 @@ func executeRequest(method, url string, headers map[string]string) *httptest.Res
 
 	rr := httptest.NewRecorder()
 	mux := http.NewServeMux()
-	loggedMux := LogRequest(mux)
+	loggedMux := app.LogRequest(mux)
 
 	mux.HandleFunc("/200", func(w http.ResponseWriter, r *http.Request) {
 		response := map[string]string{"message": "OK"}
-		WriteOut(w, http.StatusOK, response)
+		app.WriteOut(w, http.StatusOK, response)
 	})
 	mux.HandleFunc("/403", func(w http.ResponseWriter, r *http.Request) {
 		response := map[string]string{"message": "Nope"}
-		WriteOut(w, http.StatusForbidden, response)
+		app.WriteOut(w, http.StatusForbidden, response)
 	})
 	mux.HandleFunc("/headers", func(w http.ResponseWriter, r *http.Request) {
 		for name, values := range r.Header {
@@ -35,20 +37,20 @@ func executeRequest(method, url string, headers map[string]string) *httptest.Res
 				slog.Info("Header", "name", name, "value", value)
 			}
 		}
-		WriteOut(w, http.StatusOK, http.StatusOK)
+		app.WriteOut(w, http.StatusOK, http.StatusOK)
 	})
 	mux.HandleFunc("/authz", func(w http.ResponseWriter, r *http.Request) {
 		wantAuthzHeader := os.Getenv("NIMBLE_AUTHZ_HEADER")
 		gotAuthzHeader := r.Header.Get("Authorization")
 		if gotAuthzHeader == "" {
-			WriteOut(w, http.StatusForbidden, map[string]string{"message": "No authz header"})
+			app.WriteOut(w, http.StatusForbidden, map[string]string{"message": "No authz header"})
 			return
 		}
 		if gotAuthzHeader != wantAuthzHeader {
-			WriteOut(w, http.StatusForbidden, map[string]string{"message": "Wrong authz header"})
+			app.WriteOut(w, http.StatusForbidden, map[string]string{"message": "Wrong authz header"})
 			return
 		}
-		WriteOut(w, http.StatusOK, map[string]string{"message": "OK"})
+		app.WriteOut(w, http.StatusOK, map[string]string{"message": "OK"})
 	})
 
 	loggedMux.ServeHTTP(rr, req)
@@ -82,7 +84,7 @@ func TestWriteOut(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rr := httptest.NewRecorder()
-			WriteOut(rr, tt.status, tt.body)
+			app.WriteOut(rr, tt.status, tt.body)
 
 			if tt.expectedError != "" {
 				if !strings.Contains(rr.Body.String(), tt.expectedError) {

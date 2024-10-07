@@ -1,27 +1,12 @@
-package main
+package app
 
 import (
 	"encoding/json"
-	"fmt"
 	"log/slog"
 	"net/http"
-	"os"
 )
 
-const (
-	ServerBind = "0.0.0.0"
-	ServerPort = 8080
-)
-
-func main() {
-	mux := http.NewServeMux()
-	loggedMux := LogRequest(mux)
-
-	wantAuthzHeader := os.Getenv("NIMBLE_AUTHZ_HEADER")
-	if wantAuthzHeader == "" {
-		slog.Error("NIMBLE_AUTHZ_HEADER not set")
-	}
-
+func RegisterRoutes(mux *http.ServeMux, wantAuthzHeader string) {
 	mux.HandleFunc("/200", func(w http.ResponseWriter, r *http.Request) {
 		response := map[string]string{"message": "OK"}
 		WriteOut(w, http.StatusOK, response)
@@ -59,26 +44,6 @@ func main() {
 
 		response := map[string]string{"message": "OK"}
 		WriteOut(w, http.StatusOK, response)
-	})
-
-	server := &http.Server{
-		Addr:    fmt.Sprintf("%s:%d", ServerBind, ServerPort),
-		Handler: loggedMux,
-	}
-
-	slog.Info(fmt.Sprintf("Starting server on %s:%d", ServerBind, ServerPort))
-	if err := server.ListenAndServe(); err != nil {
-		slog.Error("Server failed", "error", err)
-	}
-}
-
-func LogRequest(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		slog.Info(r.Method,
-			slog.String("uri", r.URL.RequestURI()),
-			slog.String("remote", r.RemoteAddr),
-		)
-		next.ServeHTTP(w, r)
 	})
 }
 

@@ -7,15 +7,48 @@ clean:
 	@docker stop $$(docker ps -a -q) || true
 	@docker rm $$(docker ps -a -q) || true
 	@find .localstack -mindepth 1 -maxdepth 1 ! -name '.gitkeep' -exec rm -rf {} +
-	@rm -rf authz/src/build
+	@rm -rf authz/build
 	@rm -rf lambda/dist
+	@cd authz/src && go clean -testcache
+
+########################################
+### linters
+########################################
+.PHONY: lint-authz fmt-authz check-golangci-lint check-gofmt check-goimports
+
+lint-authz: check-golangci-lint
+	@pushd ./authz > /dev/null 2>&1; \
+	  golangci-lint run --timeout 5m; \
+	popd > /dev/null 2>&1;
+fmt-authz: check-goimports check-gofmt
+	@pushd ./authz > /dev/null 2>&1; \
+	  find . -name '*.go' -type f -not -path "*.git*" | xargs gofmt -d -w -s; \
+	  find . -name '*.go' -type f -not -path "*.git*" | xargs goimports -w -local github.com/froch/lambda-edge/authz; \
+	popd > /dev/null 2>&1;
+
+check-golangci-lint:
+	@command -v golangci-lint >/dev/null 2>&1 || { \
+		echo "golangci-lint is not installed. Installing..."; \
+		go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest; \
+	}
+check-gofmt:
+	@command -v gofmt >/dev/null 2>&1 || { \
+		echo "gofmt is not installed. Installing..."; \
+		go install golang.org/x/tools/cmd/gofmt@latest; \
+	}
+check-goimports:
+	@command -v goimports >/dev/null 2>&1 || { \
+		echo "goimports is not installed. Installing..."; \
+		go install golang.org/x/tools/cmd/goimports@latest; \
+	}
 
 ########################################
 ### tests
 ########################################
+.PHONY: test-authz test-lambda
 
 test-authz:
-	@pushd ./authz/src > /dev/null 2>&1;  \
+	@pushd ./authz > /dev/null 2>&1;  \
 	  go clean -testcache; \
 	  go test -v ./...; \
 	popd > /dev/null 2>&1;
@@ -32,8 +65,10 @@ test-lambda:
 
 build: build-authz build-lambda
 build-authz:
-	@mkdir -p ./authz/src/build
-	@go build -o ./authz/src/build/authz ./authz/src/main.go
+	@mkdir -p ./authz/build
+	@pushd ./authz > /dev/null 2>&1; \
+	  go build -o ./build/authz ./main.go; \
+	popd > /dev/null 2>&1;
 build-lambda:
 	@pushd lambda; \
 	  pnpm install; \
@@ -76,7 +111,7 @@ docker-run-lambda: docker-build-lambda
 ########################################
 ### localstack
 ########################################
-.PHONY: localstack localstack-lambda
+.PHONY: localstack-up localstack-lambda localstack-lambda-get-config localstack-lambda-get-iam localstack-cloudfront localstack-cloudfront-get-config localstack-cloudfront-get-origin-request-policy
 
 localstack-up:
 	@docker compose up localstack
@@ -98,6 +133,7 @@ localstack-cloudfront-get-origin-request-policy:
 ########################################
 ### k8s
 ########################################
+.PHONY: k8s-deploy-authz #k8s-deploy-lambda
 
 k8s-deploy-authz:
 	@ \
