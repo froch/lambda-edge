@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"os"
 )
 
 const (
@@ -16,14 +17,21 @@ func main() {
 	mux := http.NewServeMux()
 	loggedMux := LogRequest(mux)
 
+	wantAuthzHeader := os.Getenv("NIMBLE_AUTHZ_HEADER")
+	if wantAuthzHeader == "" {
+		slog.Error("NIMBLE_AUTHZ_HEADER not set")
+	}
+
 	mux.HandleFunc("/200", func(w http.ResponseWriter, r *http.Request) {
 		response := map[string]string{"message": "OK"}
 		WriteOut(w, http.StatusOK, response)
 	})
+
 	mux.HandleFunc("/403", func(w http.ResponseWriter, r *http.Request) {
 		response := map[string]string{"message": "Nope"}
 		WriteOut(w, http.StatusForbidden, response)
 	})
+
 	mux.HandleFunc("/headers", func(w http.ResponseWriter, r *http.Request) {
 		for name, values := range r.Header {
 			for _, value := range values {
@@ -31,6 +39,24 @@ func main() {
 			}
 		}
 		WriteOut(w, http.StatusOK, http.StatusOK)
+	})
+
+	mux.HandleFunc("/authz", func(w http.ResponseWriter, r *http.Request) {
+		gotAuthzHeader := r.Header.Get("Authorization")
+		if gotAuthzHeader == "" {
+			response := map[string]string{"message": "No authz header"}
+			WriteOut(w, http.StatusForbidden, response)
+			return
+		}
+
+		if gotAuthzHeader != wantAuthzHeader {
+			response := map[string]string{"message": "Wrong authz header"}
+			WriteOut(w, http.StatusForbidden, response)
+			return
+		}
+
+		response := map[string]string{"message": "OK"}
+		WriteOut(w, http.StatusOK, response)
 	})
 
 	server := &http.Server{
