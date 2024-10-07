@@ -18,12 +18,19 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v4
+      - name: Set Go Version
+        run: sed -En 's/^go (.*)$/GO_VERSION=\1/p' ./authz/src/go.mod >> $GITHUB_ENV
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ^${{ env.GO_VERSION }}
       - run: make test-authz
 
   build:
     name: Build Image
     runs-on: ubuntu-latest
     environment: CI
+    needs: test
 
     permissions:
       id-token: write

@@ -18,12 +18,16 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
       - run: make test-lambda
 
   build:
     name: Build Image
     runs-on: ubuntu-latest
     environment: CI
+    needs: test
 
     permissions:
       id-token: write
