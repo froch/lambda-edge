@@ -1,13 +1,26 @@
 FROM golang:1.23-alpine3.20 AS builder
-  WORKDIR /app
-  COPY go.mod go.sum main.go ./
-  RUN set -eux; \
-    apk add --no-cache git; \
-    go mod download; \
-    go build -mod=readonly -o /app/authz
-  CMD ["/app/authz"]
+  RUN apk add --no-cache \
+      build-base \
+      ca-certificates \
+      linux-headers \
+      binutils-gold \
+      git
+
+  WORKDIR /go/src/github.com/froch/lambda-edge/authz
+  COPY go.mod go.sum ./
+  RUN --mount=type=cache,target=/root/.cache/go-build \
+      --mount=type=cache,target=/root/pkg/mod \
+      set -eux; \
+      go mod download
+
+  COPY . .
+  RUN --mount=type=cache,target=/root/.cache/go-build \
+      --mount=type=cache,target=/root/pkg/mod \
+      set -eux; \
+	  go mod verify; \
+	  go install -mod=readonly
 
 FROM alpine:3.20 AS app
   EXPOSE 8080
-  COPY --chmod=0777 --from=builder /app/authz /app/authz
-  CMD ["/app/authz"]
+  COPY --chmod=0777 --from=builder /go/bin/authz /usr/local/bin/authz
+  CMD ["authz"]

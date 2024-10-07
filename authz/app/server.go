@@ -1,57 +1,80 @@
 package app
 
 import (
+	"bytes"
 	"encoding/json"
 	"log/slog"
 	"net/http"
 )
 
+type BaseResponse struct {
+	Message string `json:"message"`
+}
+
 func RegisterRoutes(mux *http.ServeMux, wantAuthzHeader string) {
 	mux.HandleFunc("/200", func(w http.ResponseWriter, r *http.Request) {
-		response := map[string]string{"message": "OK"}
+		response := &BaseResponse{Message: "OK"}
 		WriteOut(w, http.StatusOK, response)
 	})
 
 	mux.HandleFunc("/403", func(w http.ResponseWriter, r *http.Request) {
-		response := map[string]string{"message": "Nope"}
+		response := &BaseResponse{Message: "NOPE"}
 		WriteOut(w, http.StatusForbidden, response)
 	})
 
 	mux.HandleFunc("/headers", func(w http.ResponseWriter, r *http.Request) {
 		for name, values := range r.Header {
 			for _, value := range values {
-				slog.Info("Header", "name", name, "value", value)
+				slog.Info("header", "name", name, "value", value)
 			}
 		}
-		WriteOut(w, http.StatusOK, http.StatusOK)
+		response := &BaseResponse{Message: "OK"}
+		WriteOut(w, http.StatusOK, response)
 	})
 
 	mux.HandleFunc("/authz", func(w http.ResponseWriter, r *http.Request) {
 		gotAuthzHeader := r.Header.Get("Authorization")
 		if gotAuthzHeader == "" {
-			response := map[string]string{"message": "No authz header"}
-			slog.Error("No authz header")
+			str := "no Authz header"
+			response := &BaseResponse{Message: str}
+			slog.Error(str)
 			WriteOut(w, http.StatusForbidden, response)
 			return
 		}
 
 		if gotAuthzHeader != wantAuthzHeader {
-			response := map[string]string{"message": "Wrong authz header"}
-			slog.Error("Wrong authz header")
+			str := "wrong Authz header"
+			response := &BaseResponse{Message: str}
+			slog.Error(str)
 			WriteOut(w, http.StatusForbidden, response)
 			return
 		}
 
-		response := map[string]string{"message": "OK"}
+		response := &BaseResponse{Message: "OK"}
 		WriteOut(w, http.StatusOK, response)
 	})
 }
 
-func WriteOut(w http.ResponseWriter, status int, body interface{}) {
+func WriteOut(w http.ResponseWriter, status int, body *BaseResponse) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	if err := json.NewEncoder(w).Encode(body); err != nil {
-		slog.Error("Failed to write response", "error", err)
-		http.Error(w, "Failed to write response", http.StatusInternalServerError)
+
+	var buffer bytes.Buffer
+	encoder := json.NewEncoder(&buffer)
+	encoder.SetIndent("", "  ")
+
+	if err := encoder.Encode(body); err != nil {
+		str := "failed to encode response"
+		slog.Error(str, "error", err)
+		http.Error(w, str, http.StatusInternalServerError)
+		return
+	}
+
+	_, err := w.Write(buffer.Bytes())
+	if err != nil {
+		str := "failed to write response"
+		slog.Error(str, "error", err)
+		http.Error(w, str, http.StatusInternalServerError)
+		return
 	}
 }

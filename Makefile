@@ -75,6 +75,12 @@ build-lambda:
 	  pnpm build; \
 	popd
 
+install-authz:
+	@pushd ./authz > /dev/null 2>&1; \
+	  go mod verify; \
+	  go install -mod=readonly; \
+	popd > /dev/null 2>&1;
+
 ########################################
 ### docker
 ########################################

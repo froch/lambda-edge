@@ -22,7 +22,7 @@ func main() {
 
 	wantAuthzHeader := os.Getenv("AUTHZ_HEADER")
 	if wantAuthzHeader == "" {
-		slog.Error("AUTHZ_HEADER not set")
+		slog.Error("env unset", slog.String("key", "AUTHZ_HEADER"))
 	}
 
 	app.RegisterRoutes(mux, wantAuthzHeader)
@@ -32,8 +32,8 @@ func main() {
 		Handler: loggedMux,
 	}
 
-	slog.Info(fmt.Sprintf("Starting server on %s:%d", ServerBind, ServerPort))
+	slog.Info("server started", slog.String("bind", ServerBind), slog.Int("port", ServerPort))
 	if err := server.ListenAndServe(); err != nil {
-		slog.Error("Server failed", "error", err)
+		slog.Error("server failed", "error", err)
 	}
 }

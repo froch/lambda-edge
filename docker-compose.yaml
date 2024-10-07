@@ -4,8 +4,8 @@ services:
   authz:
     image: $AWS_ECR_REPOSITORY/authz
     build:
-      context: ./authz/src
-      dockerfile: authz/Dockerfile
+      context: ./authz
+      dockerfile: Dockerfile
     networks:
       - froch
     ports:

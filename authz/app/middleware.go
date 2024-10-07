@@ -9,10 +9,14 @@ import (
 // LogRequest logs the incoming HTTP requests
 func LogRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		slog.Info("rc v",
+		clientIP := r.Header.Get("X-Forwarded-For")
+		if clientIP == "" {
+			clientIP = r.RemoteAddr
+		}
+		slog.Info("rcv",
 			slog.String("method", r.Method),
 			slog.String("uri", r.URL.RequestURI()),
-			slog.String("remote", r.RemoteAddr),
+			slog.String("client_ip", clientIP),
 		)
 		next.ServeHTTP(w, r)
 	})
@@ -23,15 +27,13 @@ func LogResponse(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
-		// Wrap the response writer to capture status
 		lrw := &loggingResponseWriter{ResponseWriter: w, statusCode: http.StatusOK}
 		next.ServeHTTP(lrw, r)
 
-		// Log response details after processing request
-		slog.Info("Response sent",
+		responseBody := lrw.body.String()
+		slog.Info("rsp",
 			slog.Int("status", lrw.statusCode),
-			slog.String("method", r.Method),
-			slog.String("uri", r.URL.RequestURI()),
+			slog.String("body", responseBody),
 			slog.String("duration", time.Since(start).String()),
 		)
 	})
