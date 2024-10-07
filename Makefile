@@ -21,6 +21,7 @@ test-authz:
 	popd > /dev/null 2>&1;
 test-lambda:
 	@pushd lambda > /dev/null 2>&1; \
+	  pnpm install; \
 	  pnpm test; \
 	popd > /dev/null 2>&1;
 

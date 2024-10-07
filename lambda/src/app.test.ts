@@ -25,13 +25,22 @@ const mockResponseCallback = () => {
 };
 
 describe('Lambda Authorization Handler with Real External Server', () => {
-  dotenv.config();
+  if ( // load .env file if not already loaded
+    process.env.AUTHZ_HOST === undefined ||
+    process.env.AUTHZ_PORT === undefined ||
+    process.env.AUTHZ_PATH === undefined
+  ) {
+    dotenv.config();
+  }
+
+  // stash these for later
   const validAuthzHeader = process.env.AUTHZ_HEADER || undefined;
   const AUTHZ_HOST = process.env.AUTHZ_HOST;
   const AUTHZ_PORT = process.env.AUTHZ_PORT;
   const AUTHZ_PATH = process.env.AUTHZ_PATH;
 
   beforeAll(() => {
+    // reset on every run
     process.env.AUTHZ_HOST = AUTHZ_HOST;
     process.env.AUTHZ_PORT = AUTHZ_PORT;
     process.env.AUTHZ_PATH = AUTHZ_PATH;

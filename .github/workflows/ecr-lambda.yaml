@@ -21,7 +21,23 @@ jobs:
       - uses: pnpm/action-setup@v4
         with:
           version: 9
-      - run: make test-lambda
+          run_install: false
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: ./lambda/package.json
+      - name: make test
+        run: |
+          cd lambda
+          pnpm install
+          pnpm test
+        env:
+          AUTHZ_HEADER: ${{ secrets.AUTHZ_HEADER }}
+          AUTHZ_HOST: ${{ secrets.AUTHZ_HOST }}
+          AUTHZ_PATH: ${{ secrets.AUTHZ_PATH }}
+          AUTHZ_PORT: ${{ secrets.AUTHZ_PORT }}
 
   build:
     name: Build Image
