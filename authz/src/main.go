@@ -45,12 +45,14 @@ func main() {
 		gotAuthzHeader := r.Header.Get("Authorization")
 		if gotAuthzHeader == "" {
 			response := map[string]string{"message": "No authz header"}
+			slog.Error("No authz header")
 			WriteOut(w, http.StatusForbidden, response)
 			return
 		}
 
 		if gotAuthzHeader != wantAuthzHeader {
 			response := map[string]string{"message": "Wrong authz header"}
+			slog.Error("Wrong authz header")
 			WriteOut(w, http.StatusForbidden, response)
 			return
 		}
