@@ -2,9 +2,9 @@ import { CloudFrontRequestEvent, CloudFrontRequestCallback, CloudFrontRequestRes
 import https, { RequestOptions } from 'https';
 import { IncomingMessage } from 'http';
 
-const AUTHZ_HOSTNAME = process.env.AUTHZ_HOSTNAME || 'authz';
-const OK_PATH = process.env.OK_PATH || '/200';
-const NOPE_PATH = process.env.NOPE_PATH || '/403';
+const AUTHZ_HOST = process.env.AUTHZ_HOST || 'authz';
+const AUTHZ_PORT = process.env.AUTHZ_PORT || '8080';
+const AUTHZ_PATH = process.env.AUTHZ_PATH || '/authz';
 const KEEP_ALIVE_TIMEOUT = parseInt(process.env.KEEP_ALIVE_TIMEOUT || '5000', 10);
 
 const keepAliveAgent = new https.Agent({ keepAlive: true, timeout: KEEP_ALIVE_TIMEOUT });
@@ -49,14 +49,14 @@ export const handler = (event: CloudFrontRequestEvent, context: any, callback: C
   }
 };
 
-const authzWithExternalServer = (authHeader: string): Promise<boolean> => {
+const authzWithExternalServer = (authzHeader: string): Promise<boolean> => {
   return new Promise((resolve, reject) => {
     const options: RequestOptions = {
-      hostname: AUTHZ_HOSTNAME,
-      port: 8080,
-      path: OK_PATH,
+      hostname: AUTHZ_HOST,
+      port: AUTHZ_PORT,
+      path: AUTHZ_PATH,
       method: 'GET',
-      headers: { 'authentication': authHeader },
+      headers: { 'Authorization': authzHeader },
       agent: keepAliveAgent,
       timeout: KEEP_ALIVE_TIMEOUT,
     };
@@ -88,7 +88,7 @@ const authzWithExternalServer = (authHeader: string): Promise<boolean> => {
 
 const validateEventStructure = (event: CloudFrontRequestEvent) => {
   if (!event.Records || event.Records.length === 0 || !event.Records[0].cf) {
-    throw new Error('Invalid event structure');
+    throw new Error(`Invalid event structure: ${JSON.stringify(event)}`);
   }
   return event.Records[0].cf.request;
 };
