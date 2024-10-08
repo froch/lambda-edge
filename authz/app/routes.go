@@ -5,59 +5,53 @@ import (
 	"net/http"
 )
 
+// RegisterRoutes registers the routes
 func (s *AuthzServer) RegisterRoutes(wantAuthzHeader string) {
-	s.register200()
-	s.register403()
-	s.registerHeaders()
-	s.registerAuthz(wantAuthzHeader)
+	s.registerRoute("/200", http.StatusOK, "OK", nil)
+	s.registerRoute("/403", http.StatusForbidden, "NOPE", nil)
+	s.registerRoute("/headers", http.StatusOK, "OK", s.logHeaders)
+	s.registerRoute("/authz", http.StatusOK, "OK", s.checkAuthzHeader(wantAuthzHeader))
 }
 
-func (s *AuthzServer) register200() {
-	s.Mux.HandleFunc("/200", func(w http.ResponseWriter, r *http.Request) {
-		response := &BaseResponse{Message: "OK"}
-		WriteOut(w, http.StatusOK, response)
-	})
-}
-
-func (s *AuthzServer) register403() {
-	s.Mux.HandleFunc("/403", func(w http.ResponseWriter, r *http.Request) {
-		response := &BaseResponse{Message: "NOPE"}
-		WriteOut(w, http.StatusForbidden, response)
-	})
-}
-
-func (s *AuthzServer) registerHeaders() {
-	s.Mux.HandleFunc("/headers", func(w http.ResponseWriter, r *http.Request) {
-		for name, values := range r.Header {
-			for _, value := range values {
-				slog.Info("header", "name", name, "value", value)
-			}
+// registerRoute registers a route
+func (s *AuthzServer) registerRoute(path string, status int, message string, handlerFunc func(http.ResponseWriter, *http.Request) bool) {
+	s.Mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		if handlerFunc != nil && !handlerFunc(w, r) {
+			return
 		}
-		response := &BaseResponse{Message: "OK"}
-		WriteOut(w, http.StatusOK, response)
+		response := &BaseResponse{Message: message}
+		WriteOut(w, status, response)
 	})
 }
 
-func (s *AuthzServer) registerAuthz(wantAuthzHeader string) {
-	s.Mux.HandleFunc("/authz", func(w http.ResponseWriter, r *http.Request) {
+// logHeaders logs the headers
+func (s *AuthzServer) logHeaders(w http.ResponseWriter, r *http.Request) bool {
+	for name, values := range r.Header {
+		for _, value := range values {
+			slog.Info("header", "name", name, "value", value)
+		}
+	}
+	return true
+}
+
+// checkAuthzHeader checks the Authorization header
+func (s *AuthzServer) checkAuthzHeader(wantAuthzHeader string) func(http.ResponseWriter, *http.Request) bool {
+	return func(w http.ResponseWriter, r *http.Request) bool {
 		gotAuthzHeader := r.Header.Get("Authorization")
-		if gotAuthzHeader == "" {
-			str := "no Authz header"
-			response := &BaseResponse{Message: str}
-			slog.Error("rcv", "error", str)
+		if errMsg := s.validateAuthzHeader(gotAuthzHeader, wantAuthzHeader); errMsg != "" {
+			response := &BaseResponse{Message: errMsg}
+			slog.Error("rcv", "error", errMsg)
 			WriteOut(w, http.StatusForbidden, response)
-			return
+			return false
 		}
+		return true
+	}
+}
 
-		if gotAuthzHeader != wantAuthzHeader {
-			str := "wrong Authz header"
-			response := &BaseResponse{Message: str}
-			slog.Error(str)
-			WriteOut(w, http.StatusForbidden, response)
-			return
-		}
-
-		response := &BaseResponse{Message: "OK"}
-		WriteOut(w, http.StatusOK, response)
-	})
+// validateAuthzHeader validates the Authorization header
+func (s *AuthzServer) validateAuthzHeader(gotAuthzHeader, wantAuthzHeader string) string {
+	if gotAuthzHeader != wantAuthzHeader {
+		return "Invalid authz header"
+	}
+	return ""
 }

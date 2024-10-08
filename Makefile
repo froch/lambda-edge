@@ -26,6 +26,15 @@ fmt-authz: check-goimports check-gofmt
 	  find . -name '*.go' -type f -not -path "*.git*" | xargs goimports -w -local github.com/froch/lambda-edge/authz; \
 	popd > /dev/null 2>&1;
 
+lint-lambda:
+	@pushd ./lambda > /dev/null 2>&1; \
+	  pnpm lint; \
+	popd > /dev/null 2>&1;
+fmt-lambda: check-goimports check-gofmt
+	@pushd ./lambda > /dev/null 2>&1; \
+	  pnpm fmt; \
+	popd > /dev/null 2>&1;
+
 check-golangci-lint:
 	@command -v golangci-lint >/dev/null 2>&1 || { \
 		echo "golangci-lint is not installed. Installing..."; \

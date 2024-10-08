@@ -46,6 +46,7 @@ func LogResponse(next http.Handler) http.Handler {
 	})
 }
 
+// fmtBody formats the response body
 func fmtBody(lrw *loggingResponseWriter) string {
 	var formattedBody string
 	if json.Valid(lrw.body.Bytes()) {

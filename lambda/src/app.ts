@@ -70,11 +70,12 @@ const authzExternal = (
       timeout: KEEP_ALIVE_TIMEOUT,
     })
     .then((response) => {
+      console.log('Authorization OK: ', JSON.stringify(response.data));
       callback(response.status === 200, response.status);
     })
     .catch((error) => {
+      console.error('Authorization error: ', error instanceof Error ? error.message : JSON.stringify(error));
       const statusCode = error.response ? error.response.status : 500;
-      console.error('Authorization request error:', error instanceof Error ? error.message : error);
       callback(false, statusCode);
     });
 };

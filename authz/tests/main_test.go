@@ -70,7 +70,6 @@ func TestWriteOut(t *testing.T) {
 }
 
 // TestHandlers tests the HTTP handlers
-// TestHandlers tests the HTTP handlers
 func TestHandlers(t *testing.T) {
 	os.Setenv("AUTHZ_HEADER", "correct-header")
 	defer os.Unsetenv("AUTHZ_HEADER")
@@ -110,7 +109,7 @@ func TestHandlers(t *testing.T) {
 			url:          "/authz",
 			method:       "GET",
 			expectedCode: http.StatusForbidden,
-			expectedBody: &app.BaseResponse{Message: "no Authz header"},
+			expectedBody: &app.BaseResponse{Message: "Invalid authz header"},
 		},
 		{
 			name:         "AuthzWrongHeader",
@@ -118,7 +117,7 @@ func TestHandlers(t *testing.T) {
 			method:       "GET",
 			headers:      map[string]string{"Authorization": "wrong-header"},
 			expectedCode: http.StatusForbidden,
-			expectedBody: &app.BaseResponse{Message: "wrong Authz header"},
+			expectedBody: &app.BaseResponse{Message: "Invalid authz header"},
 		},
 		{
 			name:         "AuthzCorrectHeader",

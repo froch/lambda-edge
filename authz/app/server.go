@@ -8,6 +8,7 @@ import (
 	"net/http"
 )
 
+// AuthzServer is the HTTP server
 type AuthzServer struct {
 	*http.Server
 	Addr    string
