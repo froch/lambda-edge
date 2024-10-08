@@ -6,10 +6,13 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "clean": "rm -rf dist",
-    "nuke": "rm -rf dist node_modules pnpm-lock.yaml && pnpm install",
+    "clean": "rm -rf dist pkg zip",
     "fmt": "prettier --write .",
     "lint": "eslint .",
+    "nuke:dev": "rm -rf dist node_modules pnpm-lock.yaml && pnpm install",
+    "nuke:prod": "rm -rf dist node_modules pnpm-lock.yaml && pnpm install --prod --node-linker=hoisted",
+    "lambda:pkg": "pnpm clean; pnpm nuke:prod; pnpm build; mkdir pkg; cp dist/app.js pkg/app.js; cp -r node_modules pkg/node_modules",
+    "lambda:zip": "node tools/lambda-zip.js",
     "start": "ts-node src/index.ts",
     "test": "vitest",
     "watch": "nodemon --exec ts-node src/index.ts"
@@ -18,6 +21,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/aws-lambda": "^8.10.145",
     "@types/node": "^22.7.4",
     "aws-lambda": "^1.0.7",
     "aws-sdk": "^2.1691.0",
@@ -27,7 +31,6 @@
     "vitest": "^2.1.2"
   },
   "devDependencies": {
-    "@types/aws-lambda": "^8.10.145",
     "@typescript-eslint/eslint-plugin": "^8.8.0",
     "@typescript-eslint/parser": "^8.8.0",
     "eslint": "^9.11.1",

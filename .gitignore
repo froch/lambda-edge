@@ -4,6 +4,9 @@
 .envrc
 authz/**/build/
 .localstack/state/
+lambda/pkg/
+lambda/zip/
+lambda*.zip
 
 ### golang
 ### see: https://github.com/github/gitignore/blob/main/Go.gitignore
