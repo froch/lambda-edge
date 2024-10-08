@@ -9,9 +9,9 @@
     "clean": "rm -rf dist pkg zip",
     "fmt": "prettier --write .",
     "lint": "eslint .",
-    "nuke:dev": "rm -rf dist node_modules pnpm-lock.yaml && pnpm install",
-    "nuke:prod": "rm -rf dist node_modules pnpm-lock.yaml && pnpm install --prod --node-linker=hoisted",
-    "lambda:pkg": "pnpm clean; pnpm nuke:prod; pnpm build; mkdir pkg; cp dist/app.js pkg/app.js; cp -r node_modules pkg/node_modules",
+    "nuke:dev": "pnpm clean; rm -rf node_modules pnpm-lock.yaml && pnpm install",
+    "nuke:prod": "pnpm clean; rm -rf node_modules pnpm-lock.yaml && pnpm install --prod --node-linker=hoisted",
+    "lambda:pkg": "pnpm nuke:prod; pnpm build; mkdir pkg; cp dist/app.js pkg/app.js; cp -r node_modules pkg/node_modules",
     "lambda:zip": "node tools/lambda-zip.js",
     "start": "ts-node src/index.ts",
     "test": "vitest",
@@ -23,19 +23,17 @@
   "dependencies": {
     "@types/aws-lambda": "^8.10.145",
     "@types/node": "^22.7.4",
-    "aws-lambda": "^1.0.7",
-    "aws-sdk": "^2.1691.0",
-    "axios": "^1.7.7",
-    "dotenv": "^16.4.5",
-    "typescript": "^5.6.2",
-    "vitest": "^2.1.2"
+    "axios": "^1.7.7"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.8.0",
     "@typescript-eslint/parser": "^8.8.0",
+    "dotenv": "^16.4.5",
     "eslint": "^9.11.1",
     "nodemon": "^3.1.7",
     "prettier": "^3.3.3",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.2",
+    "vitest": "^2.1.2"
   }
 }

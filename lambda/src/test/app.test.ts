@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { handler } from './app';
+import { handler } from '../app';
 import { CloudFrontRequestEvent } from 'aws-lambda';
 import dotenv from 'dotenv';
 

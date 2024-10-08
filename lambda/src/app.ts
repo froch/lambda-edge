@@ -76,6 +76,7 @@ const authzWithExternalServer = (
 };
 
 const validateEventStructure = (event: CloudFrontRequestEvent) => {
+  console.log('Event:', JSON.stringify(event));
   if (!event.Records || event.Records.length === 0 || !event.Records[0].cf) {
     throw new Error(`Invalid event structure: ${JSON.stringify(event)}`);
   }
@@ -83,6 +84,7 @@ const validateEventStructure = (event: CloudFrontRequestEvent) => {
 };
 
 const getAuthenticationHeader = (headers: Record<string, any>) => {
+  console.log('Headers:', JSON.stringify(headers));
   const headerKey = Object.keys(headers).find((key) => key.toLowerCase() === 'authorization');
   return headerKey ? headers[headerKey][0]?.value : undefined;
 };
