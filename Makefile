@@ -9,7 +9,7 @@ clean:
 	@find .localstack -mindepth 1 -maxdepth 1 ! -name '.gitkeep' -exec rm -rf {} +
 	@rm -rf authz/build
 	@rm -rf lambda/dist
-	@cd authz/src && go clean -testcache
+	@cd authz && go clean -testcache
 
 ########################################
 ### linters
@@ -70,10 +70,10 @@ build-authz:
 	  go build -o ./build/authz ./main.go; \
 	popd > /dev/null 2>&1;
 build-lambda:
-	@pushd lambda; \
+	@pushd ./lambda > /dev/null 2>&1; \
 	  pnpm install; \
 	  pnpm build; \
-	popd
+	popd > /dev/null 2>&1
 
 install-authz:
 	@pushd ./authz > /dev/null 2>&1; \
