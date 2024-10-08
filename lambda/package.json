@@ -11,7 +11,7 @@
     "lint": "eslint .",
     "nuke:dev": "pnpm clean; rm -rf node_modules pnpm-lock.yaml && pnpm install",
     "nuke:prod": "pnpm clean; rm -rf node_modules pnpm-lock.yaml && pnpm install --prod --node-linker=hoisted",
-    "lambda:pkg": "pnpm nuke:prod; pnpm build; mkdir pkg; cp dist/app.js pkg/app.js; cp -r node_modules pkg/node_modules",
+    "lambda:pkg": "pnpm nuke:prod; pnpm build; mkdir pkg; cp -r dist/* pkg/; cp -r node_modules pkg/node_modules",
     "lambda:zip": "node tools/lambda-zip.js",
     "start": "ts-node src/index.ts",
     "test": "vitest",
@@ -37,3 +37,4 @@
     "vitest": "^2.1.2"
   }
 }
+

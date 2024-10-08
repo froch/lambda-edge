@@ -10,7 +10,6 @@ const zipFileName = `lambda-${timestamp}.zip`;
 const zipFilePath = path.join(zipDir, zipFileName);
 
 try {
-    execSync('pnpm lambda:pkg', { stdio: 'inherit', cwd: projectRoot });
     if (!fs.existsSync(zipDir)) {
         fs.mkdirSync(zipDir);
     }

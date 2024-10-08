@@ -4,9 +4,11 @@ import {
   CloudFrontRequestResult,
 } from 'aws-lambda';
 import axios from 'axios';
+import fs from "fs";
 import https from 'https';
+import path from "path";
 
-const AUTH_ERROR_HTML = `
+const NOPE_HTML = `
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -19,50 +21,52 @@ const AUTH_ERROR_HTML = `
 </html>
 `;
 
+// -------- main handler -------- //
+
 export const handler = (
   event: CloudFrontRequestEvent,
   context: any,
   callback: CloudFrontRequestCallback
 ): void => {
   try {
-    const request = validateEventStructure(event);
-    const authHeader = getAuthenticationHeader(request.headers);
+    console.log('Event:', JSON.stringify(event));
+    console.log('Context:', JSON.stringify(context));
+    console.log('Callback:', JSON.stringify(callback));
 
-    if (!authHeader) {
-      return callback(null, generateErrorResponse(403, 'Authz: NOPE', AUTH_ERROR_HTML));
+    const request = _isValidEvent(event);
+    const authzHeader = _getAuthzHeader(request.headers);
+
+    if (!authzHeader) {
+      return callback(null, _writeOut(403, 'Authz: NOPE', NOPE_HTML));
     }
 
-    authzWithExternalServer(authHeader, (isAuthorized, statusCode) => {
+    authzExternal(authzHeader, (isAuthorized, statusCode) => {
       if (isAuthorized) {
         return callback(null, request);
       } else {
-        return callback(null, generateErrorResponse(statusCode, 'Authz: NOPE', AUTH_ERROR_HTML));
+        return callback(null, _writeOut(statusCode, 'Authz: NOPE', NOPE_HTML));
       }
     });
   } catch (error) {
     console.error('Handler error:', error instanceof Error ? error.message : error);
     return callback(
       null,
-      generateErrorResponse(500, 'Internal Server Error', 'An internal error occurred.')
+      _writeOut(500, 'Internal Server Error', 'An internal error occurred.')
     );
   }
 };
 
-const authzWithExternalServer = (
+// -------- external authz call -------- //
+
+const authzExternal = (
   authzHeader: string,
   callback: (isAuthorized: boolean, statusCode: number) => void
 ): void => {
-  const AUTHZ_HOST = process.env.AUTHZ_HOST || 'authz';
-  const AUTHZ_PORT = process.env.AUTHZ_PORT || '8080';
-  const AUTHZ_PATH = process.env.AUTHZ_PATH || '/authz';
-  const KEEP_ALIVE_TIMEOUT = parseInt(process.env.KEEP_ALIVE_TIMEOUT || '5000', 10);
-
-  const agent = new https.Agent({ keepAlive: true, timeout: KEEP_ALIVE_TIMEOUT });
-
+  const { AUTHZ_HOST, AUTHZ_PORT, AUTHZ_PATH, KEEP_ALIVE_TIMEOUT } = _loadConfigs();
   axios
     .get(`https://${AUTHZ_HOST}:${AUTHZ_PORT}${AUTHZ_PATH}`, {
       headers: { Authorization: authzHeader },
-      httpsAgent: agent,
+      httpsAgent: new https.Agent({ keepAlive: true, timeout: KEEP_ALIVE_TIMEOUT }),
       timeout: KEEP_ALIVE_TIMEOUT,
     })
     .then((response) => {
@@ -75,21 +79,44 @@ const authzWithExternalServer = (
     });
 };
 
-const validateEventStructure = (event: CloudFrontRequestEvent) => {
-  console.log('Event:', JSON.stringify(event));
+// -------- internals -------- //
+
+const _isValidEvent = (event: CloudFrontRequestEvent) => {
   if (!event.Records || event.Records.length === 0 || !event.Records[0].cf) {
     throw new Error(`Invalid event structure: ${JSON.stringify(event)}`);
   }
   return event.Records[0].cf.request;
 };
 
-const getAuthenticationHeader = (headers: Record<string, any>) => {
-  console.log('Headers:', JSON.stringify(headers));
+const _getAuthzHeader = (headers: Record<string, any>) => {
   const headerKey = Object.keys(headers).find((key) => key.toLowerCase() === 'authorization');
   return headerKey ? headers[headerKey][0]?.value : undefined;
 };
 
-const generateErrorResponse = (
+const _loadConfigs = () => {
+  const DEFAULT_AUTHZ_VALUES = {
+    AUTHZ_HOST: process.env.AUTHZ_HOST || 'authz',
+    AUTHZ_PORT: process.env.AUTHZ_PORT || '8080',
+    AUTHZ_PATH: process.env.AUTHZ_PATH || '/authz',
+    KEEP_ALIVE_TIMEOUT: 5000,
+  };
+
+  const configPath = path.resolve(__dirname, 'config.json');
+  if (!fs.existsSync(configPath)) {
+    console.log(`${configPath} not found.`)
+    return DEFAULT_AUTHZ_VALUES
+  }
+
+  try {
+    const configData = fs.readFileSync(configPath, 'utf8');
+    return JSON.parse(configData);
+  } catch (error) {
+    console.error('failed loading config:', error);
+    return DEFAULT_AUTHZ_VALUES
+  }
+}
+
+const _writeOut = (
   status: number,
   statusDescription: string,
   body: string

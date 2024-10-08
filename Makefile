@@ -152,3 +152,15 @@ k8s-deploy-authz:
 	  mv -f skaffold.yaml.bak skaffold.yaml; \
 	  mv -f deployment.yaml.bak deployment.yaml; \
 	popd > /dev/null 2>&1;
+
+########################################
+### lambda
+########################################
+.PHONY: lambda-zip
+
+lambda-zip:
+	@pushd ./lambda > /dev/null 2>&1; \
+	  pnpm lambda:pkg; \
+	  envsubst < ./tools/config.json > ./pkg/config.json; \
+	  pnpm lambda:zip; \
+	popd > /dev/null 2>&1;
