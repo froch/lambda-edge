@@ -25,7 +25,8 @@ const mockResponseCallback = () => {
 };
 
 describe('Lambda Authorization Handler with Real External Server', () => {
-  if ( // load .env file if not already loaded
+  if (
+    // load .env file if not already loaded
     process.env.AUTHZ_HOST === undefined ||
     process.env.AUTHZ_PORT === undefined ||
     process.env.AUTHZ_PATH === undefined

@@ -3,10 +3,9 @@ import {
   CloudFrontRequestCallback,
   CloudFrontRequestResult,
 } from 'aws-lambda';
-import axios from 'axios';
-import fs from "fs";
+import fs from 'fs';
 import https from 'https';
-import path from "path";
+import path from 'path';
 
 const NOPE_HTML = `
 <!DOCTYPE html>
@@ -41,19 +40,16 @@ export const handler = (
       return callback(null, _writeOut(403, 'Authz: NOPE', NOPE_HTML));
     }
 
-    authzExternal(authzHeader, (isAuthorized, statusCode) => {
-      if (isAuthorized) {
+    authzExternal(authzHeader, (_authOK, _statusCode) => {
+      if (_authOK) {
         return callback(null, request);
       } else {
-        return callback(null, _writeOut(statusCode, 'Authz: NOPE', NOPE_HTML));
+        return callback(null, _writeOut(_statusCode, 'Authz: NOPE', NOPE_HTML));
       }
     });
   } catch (error) {
     console.error('Handler error:', error instanceof Error ? error.message : error);
-    return callback(
-      null,
-      _writeOut(500, 'Internal Server Error', 'An internal error occurred.')
-    );
+    return callback(null, _writeOut(500, 'Internal Server Error', 'An internal error occurred.'));
   }
 };
 
@@ -62,24 +58,35 @@ export const handler = (
 // authzExternal calls the external authorization server
 const authzExternal = (
   authzHeader: string,
-  callback: (isAuthorized: boolean, statusCode: number) => void
+  callback: (_authOK: boolean, _statusCode: number) => void
 ): void => {
   const { AUTHZ_HOST, AUTHZ_PORT, AUTHZ_PATH, KEEP_ALIVE_TIMEOUT } = _loadConfigs();
-  axios
-    .get(`https://${AUTHZ_HOST}:${AUTHZ_PORT}${AUTHZ_PATH}`, {
-      headers: { Authorization: authzHeader },
-      httpsAgent: new https.Agent({ keepAlive: true, timeout: KEEP_ALIVE_TIMEOUT }),
-      timeout: KEEP_ALIVE_TIMEOUT,
-    })
-    .then((response) => {
-      console.log('Authorization OK: ', JSON.stringify(response.data));
-      callback(response.status === 200, response.status);
-    })
-    .catch((error) => {
-      console.error('Authorization error: ', error instanceof Error ? error.message : JSON.stringify(error));
-      const statusCode = error.response ? error.response.status : 500;
-      callback(false, statusCode);
+  const options = {
+    hostname: AUTHZ_HOST,
+    port: AUTHZ_PORT,
+    path: AUTHZ_PATH,
+    method: 'GET',
+    headers: {
+      Authorization: authzHeader,
+    },
+    timeout: KEEP_ALIVE_TIMEOUT,
+  };
+
+  const req = https.request(options, (res) => {
+    let data = '';
+    res.on('data', (chunk) => {
+      data += chunk;
     });
+    res.on('end', () => {
+      console.log('Authorization OK: ', data);
+      callback(res.statusCode === 200, res.statusCode ?? 500);
+    });
+  });
+  req.on('error', (error: any) => {
+    console.error('Authorization error: ', error.message);
+    callback(false, 500);
+  });
+  req.end();
 };
 
 // -------- internals -------- //
@@ -110,8 +117,8 @@ const _loadConfigs = () => {
 
   const configPath = path.resolve(__dirname, 'config.json');
   if (!fs.existsSync(configPath)) {
-    console.log(`${configPath} not found.`)
-    return DEFAULT_AUTHZ_VALUES
+    console.log(`${configPath} not found.`);
+    return DEFAULT_AUTHZ_VALUES;
   }
 
   try {
@@ -119,9 +126,9 @@ const _loadConfigs = () => {
     return JSON.parse(configData);
   } catch (error) {
     console.error('failed loading config:', error);
-    return DEFAULT_AUTHZ_VALUES
+    return DEFAULT_AUTHZ_VALUES;
   }
-}
+};
 
 // _writeOut returns a CloudFrontRequestResult object
 const _writeOut = (
