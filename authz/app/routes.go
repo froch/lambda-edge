@@ -40,7 +40,7 @@ func (s *AuthzServer) checkAuthzHeader(wantAuthzHeader string) func(http.Respons
 		gotAuthzHeader := r.Header.Get("Authorization")
 		if errMsg := s.validateAuthzHeader(gotAuthzHeader, wantAuthzHeader); errMsg != "" {
 			response := &BaseResponse{Message: errMsg}
-			slog.Error("rcv", "error", errMsg)
+			slog.Error("rcv", "error", errMsg, "gotHeader", gotAuthzHeader, "wantHeader", wantAuthzHeader)
 			WriteOut(w, http.StatusForbidden, response)
 			return false
 		}
