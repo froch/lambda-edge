@@ -16,11 +16,19 @@ func LogRequest(next http.Handler) http.Handler {
 		if clientIP == "" {
 			clientIP = r.RemoteAddr
 		}
-		slog.Info("rcv",
+
+		logLevel := slog.Info
+		if r.URL.RequestURI() == "/200" {
+			// squelch liveness / readiness probes
+			logLevel = slog.Debug
+		}
+
+		logLevel("rcv",
 			slog.String("method", r.Method),
 			slog.String("uri", r.URL.RequestURI()),
 			slog.String("client_ip", clientIP),
 		)
+
 		next.ServeHTTP(w, r)
 	})
 }
@@ -34,6 +42,10 @@ func LogResponse(next http.Handler) http.Handler {
 		next.ServeHTTP(lrw, r)
 
 		logLevel := slog.Info
+		if r.URL.Path == "/200" {
+			// squelch liveness / readiness probes
+			logLevel = slog.Debug
+		}
 		if lrw.statusCode >= 400 {
 			logLevel = slog.Error
 		}

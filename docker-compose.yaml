@@ -10,6 +10,11 @@ services:
       - froch
     ports:
       - 8080:8080
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/200"]
+      interval: 10s
+      timeout: 1s
+      retries: 3
 
   lambda:
     image: $AWS_ECR_REPOSITORY/lambda

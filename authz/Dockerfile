@@ -1,5 +1,6 @@
 FROM golang:1.23-alpine3.20 AS builder
-  RUN apk add --no-cache \
+  RUN set -eux; \
+    apk add --no-cache \
       build-base \
       ca-certificates \
       linux-headers \
@@ -22,5 +23,12 @@ FROM golang:1.23-alpine3.20 AS builder
 
 FROM alpine:3.20 AS app
   EXPOSE 8080
+
   COPY --chmod=0777 --from=builder /go/bin/authz /usr/local/bin/authz
+
+  RUN set -eux; \
+    apk add --no-cache \
+      ca-certificates \
+      curl
+
   CMD ["authz"]
