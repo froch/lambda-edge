@@ -19,5 +19,6 @@ module.exports = [
       '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^_' }],
       'no-console': 'off',
     },
+    ignores: ['pnpm-lock.yaml'],
   },
 ];
