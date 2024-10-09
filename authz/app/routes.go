@@ -2,6 +2,7 @@ package app
 
 import (
 	"crypto/sha256"
+	"fmt"
 	"log/slog"
 	"net/http"
 )
@@ -59,7 +60,12 @@ func (s *AuthzServer) validateAuthzHeader(gotAuthzHeader, wantAuthzHeader string
 	wantHash := sha256.Sum256([]byte(wantAuthzHeader))
 
 	if gotHash != wantHash {
-		slog.Error("validate", "gotHash", gotHash, "wantHash", wantHash)
+		xorHash := make([]byte, len(gotHash))
+		for i := 0; i < len(gotHash); i++ {
+			xorHash[i] = gotHash[i] ^ wantHash[i]
+		}
+		diff := fmt.Sprintf("%x", xorHash)
+		slog.Error("validate", "gotHeader", gotAuthzHeader, "wantHeader", wantAuthzHeader, "hashDiff", diff)
 		return "Invalid Authorization header"
 	}
 
