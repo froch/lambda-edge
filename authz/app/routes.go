@@ -1,6 +1,7 @@
 package app
 
 import (
+	"crypto/sha256"
 	"log/slog"
 	"net/http"
 )
@@ -40,7 +41,7 @@ func (s *AuthzServer) checkAuthzHeader(wantAuthzHeader string) func(http.Respons
 		gotAuthzHeader := r.Header.Get("Authorization")
 		if errMsg := s.validateAuthzHeader(gotAuthzHeader, wantAuthzHeader); errMsg != "" {
 			response := &BaseResponse{Message: errMsg}
-			slog.Error("rcv", "error", errMsg, "gotHeader", gotAuthzHeader, "wantHeader", wantAuthzHeader)
+			slog.Error("rcv", "error", errMsg)
 			WriteOut(w, http.StatusForbidden, response)
 			return false
 		}
@@ -48,13 +49,19 @@ func (s *AuthzServer) checkAuthzHeader(wantAuthzHeader string) func(http.Respons
 	}
 }
 
-// validateAuthzHeader validates the Authorization header
 func (s *AuthzServer) validateAuthzHeader(gotAuthzHeader, wantAuthzHeader string) string {
 	if gotAuthzHeader == "" {
+		slog.Error("validate", "gotHeader", gotAuthzHeader)
 		return "No Authorization header"
 	}
-	if gotAuthzHeader != wantAuthzHeader {
+
+	gotHash := sha256.Sum256([]byte(gotAuthzHeader))
+	wantHash := sha256.Sum256([]byte(wantAuthzHeader))
+
+	if gotHash != wantHash {
+		slog.Error("validate", "gotHash", gotHash, "wantHash", wantHash)
 		return "Invalid Authorization header"
 	}
+
 	return ""
 }
