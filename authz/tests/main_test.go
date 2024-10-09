@@ -109,7 +109,7 @@ func TestHandlers(t *testing.T) {
 			url:          "/authz",
 			method:       "GET",
 			expectedCode: http.StatusForbidden,
-			expectedBody: &app.BaseResponse{Message: "Invalid authz header"},
+			expectedBody: &app.BaseResponse{Message: "No Authorization header"},
 		},
 		{
 			name:         "AuthzWrongHeader",
@@ -117,7 +117,7 @@ func TestHandlers(t *testing.T) {
 			method:       "GET",
 			headers:      map[string]string{"Authorization": "wrong-header"},
 			expectedCode: http.StatusForbidden,
-			expectedBody: &app.BaseResponse{Message: "Invalid authz header"},
+			expectedBody: &app.BaseResponse{Message: "Invalid Authorization header"},
 		},
 		{
 			name:         "AuthzCorrectHeader",

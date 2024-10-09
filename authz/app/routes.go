@@ -50,8 +50,11 @@ func (s *AuthzServer) checkAuthzHeader(wantAuthzHeader string) func(http.Respons
 
 // validateAuthzHeader validates the Authorization header
 func (s *AuthzServer) validateAuthzHeader(gotAuthzHeader, wantAuthzHeader string) string {
+	if gotAuthzHeader == "" {
+		return "No Authorization header"
+	}
 	if gotAuthzHeader != wantAuthzHeader {
-		return "Invalid authz header"
+		return "Invalid Authorization header"
 	}
 	return ""
 }

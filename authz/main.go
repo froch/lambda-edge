@@ -14,7 +14,10 @@ const (
 )
 
 func main() {
-	app.InitLogger()
+	app.InitLogger(app.LoggingConfig{
+		Format: "text",
+		Level:  "info",
+	})
 
 	mux := http.NewServeMux()
 	loggedHandler := app.LogRequest(app.LogResponse(mux))
