@@ -5,6 +5,8 @@ export LOCALSTACK_AUTH_TOKEN=""
 
 export AWS_ECR_REPOSITORY=""
 export AWS_EKS_KUBECONTEXT=""
+export AWS_S3_BUCKET_NAME=""
+export AWS_S3_BUCKET_PATH=""
 
 export AUTHZ_HOST=""
 export AUTHZ_PORT=""
