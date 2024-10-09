@@ -15,14 +15,16 @@ spec:
       labels:
         app: authz
     spec:
+      serviceAccountName: authz
       containers:
         - name: authz
           image: $AWS_ECR_REPOSITORY/authz
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
           resources:
             requests:
-              memory: 64Mi
+              memory: 32Mi
               cpu: 128m
           envFrom:
             - secretRef:
