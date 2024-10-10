@@ -11,6 +11,15 @@ clean:
 	@rm -rf lambda/dist
 	@cd authz && go clean -testcache
 
+nuke-lambda-dev:
+	@pushd ./lambda > /dev/null 2>&1; \
+	  pnpm nuke:dev; \
+	popd > /dev/null 2>&1;
+nuke-lambda-prod:
+	@pushd ./lambda > /dev/null 2>&1; \
+	  pnpm nuke:prod; \
+	popd > /dev/null 2>&1;
+
 ########################################
 ### linters
 ########################################
@@ -165,9 +174,9 @@ k8s-deploy-authz:
 ########################################
 ### lambda
 ########################################
-.PHONY: lambda-zip
+.PHONY: zip-lambda
 
-lambda-zip:
+zip-lambda:
 	@pushd ./lambda > /dev/null 2>&1; \
 	  pnpm lambda:pkg; \
 	  envsubst < ./tools/config.json > ./pkg/config.json; \
