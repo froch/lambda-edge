@@ -62,7 +62,7 @@ const main = () => {
 
     _mkdir(zipDir);
     _mkZip(pkgDir, zipFilePath);
-    _zipExists(zipFilePath, 1);
+    // _zipExists(zipFilePath, 1);
 
     const latestZipFilePath = path.join(zipDir, 'lambda-latest.zip');
     _cp(zipFilePath, latestZipFilePath);

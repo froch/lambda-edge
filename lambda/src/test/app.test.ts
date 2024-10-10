@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { handler } from '../app';
 import { CloudFrontRequestEvent } from 'aws-lambda';
 import dotenv from 'dotenv';
+import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 
 const mockRequest = (headers = {}) =>
   ({
@@ -29,7 +30,8 @@ describe('Lambda Authorization Handler with Real External Server', () => {
     // load .env file if not already loaded
     process.env.AUTHZ_HOST === undefined ||
     process.env.AUTHZ_PORT === undefined ||
-    process.env.AUTHZ_PATH === undefined
+    process.env.AUTHZ_PATH === undefined ||
+    process.env.AWS_SECRET_ARN_OIDC === undefined
   ) {
     dotenv.config();
   }
@@ -39,12 +41,13 @@ describe('Lambda Authorization Handler with Real External Server', () => {
   const AUTHZ_HOST = process.env.AUTHZ_HOST;
   const AUTHZ_PORT = process.env.AUTHZ_PORT;
   const AUTHZ_PATH = process.env.AUTHZ_PATH;
-
+  const AWS_SECRET_ARN_OIDC = process.env.AWS_SECRET_ARN_OIDC;
   beforeAll(() => {
     // reset on every run
     process.env.AUTHZ_HOST = AUTHZ_HOST;
     process.env.AUTHZ_PORT = AUTHZ_PORT;
     process.env.AUTHZ_PATH = AUTHZ_PATH;
+    process.env.AWS_SECRET_ARN_OIDC = AWS_SECRET_ARN_OIDC;
   });
 
   it('should return 403 if authentication header is missing', async () => {

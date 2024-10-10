@@ -21,6 +21,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.668.0",
     "@types/aws-lambda": "^8.10.145",
     "@types/node": "^22.7.5"
   },

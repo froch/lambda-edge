@@ -6,6 +6,9 @@ import {
 import fs from 'fs';
 import https from 'https';
 import path from 'path';
+import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
+
+// -------- HTML response when authz fails -------- //
 
 const NOPE_HTML = `
 <!DOCTYPE html>
@@ -40,12 +43,26 @@ export const handler = (
       return callback(null, _writeOut(403, 'Authz: NOPE', NOPE_HTML));
     }
 
-    authzExternal(authzHeader, (_authOK, _statusCode) => {
-      if (_authOK) {
-        return callback(null, request);
-      } else {
-        return callback(null, _writeOut(_statusCode, 'Authz: NOPE', NOPE_HTML));
+    let secretValue = '';
+
+    getSecretOIDC((secret, error) => {
+      if (error) {
+          console.log("failed to fetch OIDC secret: ", error);
+          return callback(null, _writeOut(500, 'Internal Server Error', 'An internal error occurred.'));
       }
+
+      console.log("OIDC secret fetched successfully");
+      secretValue = secret ?? '';
+
+      authzExternal(authzHeader, secretValue, (_authOK, _statusCode) => {
+        if (_authOK) {
+          console.log('Authz: OK');
+          return callback(null, request);
+        } else {
+          console.log('Authz: NOPE');
+          return callback(null, _writeOut(_statusCode, 'Authz: NOPE', NOPE_HTML));
+        }
+      });
     });
   } catch (error) {
     console.error('Handler error:', error instanceof Error ? error.message : error);
@@ -55,9 +72,30 @@ export const handler = (
 
 // -------- external authz call -------- //
 
+// getSecretOIDC retrieves our OIDC token from AWS Secrets Manager
+// we need to fetch this first, and then call the authzServer
+const getSecretOIDC = (callback: (secret: string | null, error: Error | null) => void): void => {
+  const { AWS_REGION, AWS_SECRET_ARN_OIDC } = _loadConfigs();
+  const command = new GetSecretValueCommand({ SecretId: AWS_SECRET_ARN_OIDC });
+  const secretsManagerClient = new SecretsManagerClient({ region: AWS_REGION });
+
+  secretsManagerClient.send(command, (error, response) => {
+    console.log('secretsmanager error:', JSON.stringify(error));
+    console.log('secretsmanager response:', JSON.stringify(response));
+    if (error) {
+      return callback(null, error);
+    }
+    if (response && response.SecretString) {
+      return callback(response.SecretString, null);
+    }
+    return callback(null, new Error('SecretString not found in secret'));
+  });
+};
+
 // authzExternal calls the external authorization server
 const authzExternal = (
   authzHeader: string,
+  secretValue: string,
   callback: (_authOK: boolean, _statusCode: number) => void
 ): void => {
   const { AUTHZ_HOST, AUTHZ_PORT, AUTHZ_PATH, KEEP_ALIVE_TIMEOUT } = _loadConfigs();
@@ -112,6 +150,8 @@ const _loadConfigs = () => {
     AUTHZ_HOST: process.env.AUTHZ_HOST || 'authz',
     AUTHZ_PORT: process.env.AUTHZ_PORT || '8080',
     AUTHZ_PATH: process.env.AUTHZ_PATH || '/authz',
+    AWS_REGION: process.env.AWS_REGION || 'us-east-1',
+    AWS_SECRET_ARN_OIDC: process.env.AWS_SECRET_ARN_OIDC || '',
     KEEP_ALIVE_TIMEOUT: 5000,
   };
 
